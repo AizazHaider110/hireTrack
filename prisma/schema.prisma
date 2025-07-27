@@ -41,13 +41,24 @@ model Candidate {
 
 model Application {
   id          String     @id @default(uuid())
-  candidateId String
-  jobId       String
-  status      AppStatus  @default(APPLIED)
-  createdAt   DateTime   @default(now())
-
   candidate   Candidate  @relation(fields: [candidateId], references: [id])
+  candidateId String
   job         JobPosting @relation(fields: [jobId], references: [id])
+  jobId       String
+  resume      String? // optional file link or text
+  status      ApplicationStatus @default(APPLIED)
+  appliedAt   DateTime  @default(now())
+
+  @@unique([candidateId, jobId])
+}
+
+enum ApplicationStatus {
+  APPLIED
+  REVIEWED
+  INTERVIEWED
+  OFFERED
+  REJECTED
+  HIRED
 }
 
 model ResumeParse {
@@ -64,11 +75,4 @@ model ResumeParse {
 enum Role {
   ADMIN
   RECRUITER
-}
-
-enum AppStatus {
-  APPLIED
-  SHORTLISTED
-  REJECTED
-  HIRED
 }
