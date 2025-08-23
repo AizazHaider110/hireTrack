@@ -16,7 +16,22 @@ export class JobService {
   }
 
   async createJob(data: Prisma.JobPostingCreateInput) {
-    return this.prisma.jobPosting.create({ data });
+    return this.prisma.jobPosting.create({
+  data: {
+    title: "Backend Developer",
+    description: "NestJS + Prisma role",
+    location: "lhe",
+    user: {
+      create: {
+        email: "recruiter@example.com",
+        password: "hashedpassword",
+        name: "Recruiter Name",
+        role: "RECRUITER",
+      },
+    },
+  },
+});
+
   }
 
   async deleteJob(id: string) {

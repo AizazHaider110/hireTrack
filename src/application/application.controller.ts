@@ -1,6 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { NestInterceptor } from '@nestjs/common';
+import { diskStorage } from 'multer';
 import { ApplicationService } from './application.service';
 import { ApplicationStatus } from '@prisma/client';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('applications')
 export class ApplicationController {
@@ -30,4 +33,23 @@ export class ApplicationController {
   delete(@Param('id') id: string) {
     return this.service.delete(id);
   }
+  @Post(':candidateId/:jobId/upload-resume')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + file.originalname;
+        cb(null, uniqueName);
+      }
+    })
+  }))
+  async uploadResume(
+    @Param('candidateId') candidateId: string,
+    @Param('jobId') jobId: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const filePath = `/uploads/${file.filename}`;
+    return this.service.apply(candidateId, jobId, filePath);
+  }
 }
+
