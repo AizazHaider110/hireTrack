@@ -1,55 +1,48 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { NestInterceptor } from '@nestjs/common';
-import { diskStorage } from 'multer';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { ApplicationService } from './application.service';
-import { ApplicationStatus } from '@prisma/client';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateApplicationDto, UpdateApplicationDto } from '../common/dto/application.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('applications')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ApplicationController {
-  constructor(private readonly service: ApplicationService) {}
+  constructor(private readonly applicationService: ApplicationService) {}
 
   @Post()
-  apply(
-    @Body() body: { candidateId: string; jobId: string; resume?: string }
-  ) {
-    return this.service.apply(body.candidateId, body.jobId, body.resume);
+  @Roles(Role.CANDIDATE)
+  async createApplication(@Body() createApplicationDto: CreateApplicationDto, @Req() req: any) {
+    return this.applicationService.createApplication(req.user.id, req.user.role, createApplicationDto);
   }
 
-  @Get()
-  getAll() {
-    return this.service.getAll();
+  @Get('my-applications')
+  @Roles(Role.CANDIDATE)
+  async getMyApplications(@Req() req: any) {
+    return this.applicationService.getApplicationsByCandidate(req.user.id, req.user.role);
   }
 
-  @Patch(':id/status')
-  updateStatus(
+  @Get('job/:jobId')
+  @Roles(Role.RECRUITER, Role.ADMIN)
+  async getApplicationsByJob(@Param('jobId') jobId: string, @Req() req: any) {
+    return this.applicationService.getApplicationsByJob(jobId, req.user.id, req.user.role);
+  }
+
+  @Put(':id/status')
+  @Roles(Role.RECRUITER, Role.ADMIN)
+  async updateApplicationStatus(
     @Param('id') id: string,
-    @Body() body: { status: ApplicationStatus }
+    @Body() updateApplicationDto: UpdateApplicationDto,
+    @Req() req: any,
   ) {
-    return this.service.updateStatus(id, body.status);
+    return this.applicationService.updateApplicationStatus(id, req.user.id, req.user.role, updateApplicationDto);
   }
 
-  @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
-  }
-  @Post(':candidateId/:jobId/upload-resume')
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + file.originalname;
-        cb(null, uniqueName);
-      }
-    })
-  }))
-  async uploadResume(
-    @Param('candidateId') candidateId: string,
-    @Param('jobId') jobId: string,
-    @UploadedFile() file: Express.Multer.File
-  ) {
-    const filePath = `/uploads/${file.filename}`;
-    return this.service.apply(candidateId, jobId, filePath);
+  @Get('admin/all')
+  @Roles(Role.ADMIN)
+  async getAllApplications(@Req() req: any) {
+    return this.applicationService.getAllApplications(req.user.role);
   }
 }
 
