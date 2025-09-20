@@ -1,40 +1,173 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateJobDto, UpdateJobDto } from '../common/dto/job.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class JobService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllJobs() {
+  async getAllJobs(isActive?: boolean) {
+    const where = isActive !== undefined ? { isActive } : {};
+    
     return this.prisma.jobPosting.findMany({
+      where,
       include: {
-        user: true,
-        applications: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        applications: {
+          include: {
+            candidate: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
 
-  async createJob(data: Prisma.JobPostingCreateInput) {
-    return this.prisma.jobPosting.create({
-  data: {
-    title: "Backend Developer",
-    description: "NestJS + Prisma role",
-    location: "lhe",
-    user: {
-      create: {
-        email: "recruiter@example.com",
-        password: "hashedpassword",
-        name: "Recruiter Name",
-        role: "RECRUITER",
+  async getJobById(id: string) {
+    const job = await this.prisma.jobPosting.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        applications: {
+          include: {
+            candidate: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
-    },
-  },
-});
+    });
 
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    return job;
   }
 
-  async deleteJob(id: string) {
-    return this.prisma.jobPosting.delete({ where: { id } });
+  async createJob(userId: string, userRole: Role, createJobDto: CreateJobDto) {
+    if (userRole !== Role.RECRUITER && userRole !== Role.ADMIN) {
+      throw new ForbiddenException('Only recruiters and admins can create jobs');
+    }
+
+    return this.prisma.jobPosting.create({
+      data: {
+        ...createJobDto,
+        userId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateJob(id: string, userId: string, userRole: Role, updateJobDto: UpdateJobDto) {
+    const job = await this.prisma.jobPosting.findUnique({
+      where: { id },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    // Only the job creator or admin can update
+    if (job.userId !== userId && userRole !== Role.ADMIN) {
+      throw new ForbiddenException('You can only update your own jobs');
+    }
+
+    return this.prisma.jobPosting.update({
+      where: { id },
+      data: updateJobDto,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async deleteJob(id: string, userId: string, userRole: Role) {
+    const job = await this.prisma.jobPosting.findUnique({
+      where: { id },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    // Only the job creator or admin can delete
+    if (job.userId !== userId && userRole !== Role.ADMIN) {
+      throw new ForbiddenException('You can only delete your own jobs');
+    }
+
+    return this.prisma.jobPosting.delete({
+      where: { id },
+    });
+  }
+
+  async getJobsByRecruiter(userId: string) {
+    return this.prisma.jobPosting.findMany({
+      where: { userId },
+      include: {
+        applications: {
+          include: {
+            candidate: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 }
