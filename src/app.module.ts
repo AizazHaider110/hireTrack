@@ -10,6 +10,7 @@ import { JobModule } from './job/job.module';
 import { ApplicationModule } from './application/application.module';
 import { ResumeModule } from './resume/resume.module';
 import { AdminModule } from './admin/admin.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AdminModule } from './admin/admin.module';
       },
     ]),
     PrismaModule,
+    EventsModule,
     AuthModule,
     UserModule,
     JobModule,
