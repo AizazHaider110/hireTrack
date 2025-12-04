@@ -12,9 +12,15 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role      Role     @default(RECRUITER)
+  role      Role     @default(CANDIDATE)
+  phone     String?
   createdAt DateTime @default(now())
-  jobs      JobPosting[]
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  jobs         JobPosting[]    // For RECRUITER/ADMIN
+  applications Application[]   // For CANDIDATE
+  candidate    Candidate?      // For CANDIDATE
 }
 
 model JobPosting {
@@ -22,7 +28,13 @@ model JobPosting {
   title       String
   description String
   location    String
+  salary      String?
+  requirements String[]
+  isActive    Boolean      @default(true)
   createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
   userId      String
   user        User         @relation(fields: [userId], references: [id])
   applications Application[]
@@ -30,35 +42,37 @@ model JobPosting {
 
 model Candidate {
   id          String       @id @default(uuid())
-  name        String
-  email       String       @unique
-  phone       String?
-  resumeUrl   String       // cloud/local resume link
+  userId      String       @unique
+  user        User         @relation(fields: [userId], references: [id])
+  resumeUrl   String?      // cloud/local resume link
+  skills      String[]
+  education   String?
+  experience  String?
   createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
   applications Application[]
   resumeParse ResumeParse?
 }
 
 model Application {
   id          String     @id @default(uuid())
-  candidate   Candidate  @relation(fields: [candidateId], references: [id])
-  candidateId String
-  job         JobPosting @relation(fields: [jobId], references: [id])
-  jobId       String
-  resume      String? // optional file link or text
   status      ApplicationStatus @default(APPLIED)
+  coverLetter String?
+  resumeUrl   String?
   appliedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  candidateId String
+  candidate   Candidate  @relation(fields: [candidateId], references: [id])
+  jobId       String
+  job         JobPosting @relation(fields: [jobId], references: [id])
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
 
   @@unique([candidateId, jobId])
-}
-
-enum ApplicationStatus {
-  APPLIED
-  REVIEWED
-  INTERVIEWED
-  OFFERED
-  REJECTED
-  HIRED
 }
 
 model ResumeParse {
@@ -68,6 +82,7 @@ model ResumeParse {
   education   String?
   experience  String?
   rawText     String?
+  parsedAt    DateTime   @default(now())
 
   candidate   Candidate  @relation(fields: [candidateId], references: [id])
 }
@@ -75,4 +90,14 @@ model ResumeParse {
 enum Role {
   ADMIN
   RECRUITER
+  CANDIDATE
+}
+
+enum ApplicationStatus {
+  APPLIED
+  REVIEWED
+  INTERVIEWED
+  OFFERED
+  REJECTED
+  HIRED
 }
