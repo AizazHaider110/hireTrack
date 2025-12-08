@@ -150,7 +150,7 @@ export class WorkersService implements OnModuleInit {
             this.logger.warn(`Unknown AI scoring job type: ${job.name}`);
         }
       },
-      3, // Process 3 AI scoring jobs concurrently
+      3, // Process 3 AI scoring jobs concurrentlyy
     );
   }
 
