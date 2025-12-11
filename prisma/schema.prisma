@@ -17,10 +17,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  // Relations
-  jobs         JobPosting[]    // For RECRUITER/ADMIN
-  applications Application[]   // For CANDIDATE
-  candidate    Candidate?      // For CANDIDATE
+  // Enhanced relations
+  jobs              JobPosting[]
+  applications      Application[]
+  candidate         Candidate?
+  teamMemberships   TeamMember[]
+  interviews        Interview[]
+  feedback          Feedback[]
+  auditLogs         AuditLog[]
+  webhooks          Webhook[]
 }
 
 model JobPosting {
@@ -34,26 +39,289 @@ model JobPosting {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   
-  // Relations
   userId      String
   user        User         @relation(fields: [userId], references: [id])
-  applications Application[]
+  teamId      String?
+  team        Team?        @relation(fields: [teamId], references: [id])
+  
+  // Enhanced relations
+  applications      Application[]
+  pipeline          Pipeline?
+  customFields      CustomApplicationField[]
+  analytics         JobAnalytics?
 }
 
+model Pipeline {
+  id        String   @id @default(uuid())
+  jobId     String   @unique
+  job       JobPosting @relation(fields: [jobId], references: [id])
+  stages    Stage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Stage {
+  id         String   @id @default(uuid())
+  pipelineId String
+  pipeline   Pipeline @relation(fields: [pipelineId], references: [id])
+  name       String
+  order      Int
+  color      String
+  candidates CandidateCard[]
+  createdAt  DateTime @default(now())
+}
+
+model CandidateCard {
+  id             String   @id @default(uuid())
+  candidateId    String
+  candidate      Candidate @relation(fields: [candidateId], references: [id])
+  stageId        String
+  stage          Stage    @relation(fields: [stageId], references: [id])
+  position       Int
+  enteredStageAt DateTime @default(now())
+  
+  @@unique([candidateId, stageId])
+}
+
+model StageTransition {
+  id          String   @id @default(uuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  fromStageId String
+  toStageId   String
+  movedBy     String
+  movedAt     DateTime @default(now())
+  reason      String?
+}
+
+model Interview {
+  id              String         @id @default(uuid())
+  candidateId     String
+  candidate       Candidate      @relation(fields: [candidateId], references: [id])
+  jobId           String
+  scheduledAt     DateTime
+  duration        Int
+  location        String
+  type            InterviewType
+  status          InterviewStatus @default(SCHEDULED)
+  calendarEventId String?
+  notes           String?
+  createdBy       String
+  creator         User           @relation(fields: [createdBy], references: [id])
+  interviewers    InterviewParticipant[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model InterviewParticipant {
+  id          String    @id @default(uuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id])
+  userId      String
+  role        String    // 'interviewer' or 'organizer'
+  
+  @@unique([interviewId, userId])
+}
+
+model Feedback {
+  id          String    @id @default(uuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  interviewId String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  rating      Int
+  comment     String
+  isPrivate   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  members     TeamMember[]
+  jobs        JobPosting[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id])
+  role     TeamRole
+  joinedAt DateTime @default(now())
+  
+  @@unique([userId, teamId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  resource   String
+  resourceId String
+  before     Json?
+  after      Json?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+  
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([timestamp])
+}
+
+model CandidateScore {
+  id              String   @id @default(uuid())
+  candidateId     String
+  candidate       Candidate @relation(fields: [candidateId], references: [id])
+  jobId           String
+  overallScore    Float
+  skillsScore     Float
+  experienceScore Float
+  educationScore  Float
+  breakdown       Json
+  calculatedAt    DateTime @default(now())
+  
+  @@unique([candidateId, jobId])
+}
+
+model TalentPoolEntry {
+  id              String             @id @default(uuid())
+  candidateId     String             @unique
+  candidate       Candidate          @relation(fields: [candidateId], references: [id])
+  tags            String[]
+  status          TalentStatus
+  availability    AvailabilityStatus
+  lastContactedAt DateTime?
+  notes           String?
+  addedBy         String
+  addedAt         DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model Webhook {
+  id         String            @id @default(uuid())
+  url        String
+  events     WebhookEvent[]
+  secret     String
+  isActive   Boolean           @default(true)
+  createdBy  String
+  creator    User              @relation(fields: [createdBy], references: [id])
+  deliveries WebhookDelivery[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model WebhookDelivery {
+  id            String         @id @default(uuid())
+  webhookId     String
+  webhook       Webhook        @relation(fields: [webhookId], references: [id])
+  event         WebhookEvent
+  payload       Json
+  status        DeliveryStatus
+  attempts      Int            @default(0)
+  lastAttemptAt DateTime?
+  nextRetryAt   DateTime?
+  responseCode  Int?
+  responseBody  String?
+  createdAt     DateTime       @default(now())
+}
+
+model EmailTemplate {
+  id        String            @id @default(uuid())
+  name      String
+  subject   String
+  body      String
+  variables String[]
+  type      EmailTemplateType
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model EmailJob {
+  id           String      @id @default(uuid())
+  to           String
+  subject      String
+  body         String
+  templateId   String?
+  variables    Json?
+  scheduledFor DateTime?
+  status       EmailStatus @default(PENDING)
+  attempts     Int         @default(0)
+  lastError    String?
+  createdAt    DateTime    @default(now())
+  sentAt       DateTime?
+}
+
+model CareerPage {
+  id          String    @id @default(uuid())
+  companyId   String
+  slug        String    @unique
+  title       String
+  description String
+  sections    Json
+  theme       Json
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model CustomApplicationField {
+  id         String    @id @default(uuid())
+  jobId      String
+  job        JobPosting @relation(fields: [jobId], references: [id])
+  fieldName  String
+  fieldType  FieldType
+  isRequired Boolean   @default(false)
+  options    String[]
+  validation Json?
+  order      Int
+  createdAt  DateTime  @default(now())
+}
+
+model JobAnalytics {
+  id                      String   @id @default(uuid())
+  jobId                   String   @unique
+  job                     JobPosting @relation(fields: [jobId], references: [id])
+  totalViews              Int      @default(0)
+  totalApplications       Int      @default(0)
+  sourceBreakdown         Json
+  viewsOverTime           Json
+  applicationsOverTime    Json
+  updatedAt               DateTime @updatedAt
+}
+
+// Enhanced existing models
 model Candidate {
   id          String       @id @default(uuid())
   userId      String       @unique
   user        User         @relation(fields: [userId], references: [id])
-  resumeUrl   String?      // cloud/local resume link
+  resumeUrl   String?
   skills      String[]
   education   String?
   experience  String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   
-  // Relations
-  applications Application[]
-  resumeParse ResumeParse?
+  // Enhanced relations
+  applications      Application[]
+  resumeParse       ResumeParse?
+  candidateCards    CandidateCard[]
+  stageTransitions  StageTransition[]
+  interviews        Interview[]
+  feedback          Feedback[]
+  scores            CandidateScore[]
+  talentPoolEntry   TalentPoolEntry?
 }
 
 model Application {
@@ -87,9 +355,12 @@ model ResumeParse {
   candidate   Candidate  @relation(fields: [candidateId], references: [id])
 }
 
+// Enums
 enum Role {
   ADMIN
   RECRUITER
+  HIRING_MANAGER
+  INTERVIEWER
   CANDIDATE
 }
 
@@ -100,4 +371,82 @@ enum ApplicationStatus {
   OFFERED
   REJECTED
   HIRED
+}
+
+enum TeamRole {
+  TEAM_LEAD
+  RECRUITER
+  INTERVIEWER
+  VIEWER
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  VIDEO
+  ONSITE
+  TECHNICAL
+  BEHAVIORAL
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum TalentStatus {
+  ACTIVE
+  PASSIVE
+  NOT_INTERESTED
+}
+
+enum AvailabilityStatus {
+  IMMEDIATELY
+  TWO_WEEKS
+  ONE_MONTH
+  NOT_AVAILABLE
+}
+
+enum WebhookEvent {
+  CANDIDATE_APPLIED
+  CANDIDATE_STAGE_CHANGED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  OFFER_SENT
+  OFFER_ACCEPTED
+  CANDIDATE_REJECTED
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  RETRYING
+}
+
+enum EmailTemplateType {
+  APPLICATION_RECEIVED
+  INTERVIEW_INVITATION
+  INTERVIEW_REMINDER
+  REJECTION
+  OFFER_LETTER
+  STAGE_CHANGE
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  SCHEDULED
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  EMAIL
+  PHONE
+  DROPDOWN
+  CHECKBOX
+  FILE
 }
