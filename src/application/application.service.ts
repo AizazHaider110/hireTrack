@@ -1,13 +1,25 @@
-import { Injectable, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateApplicationDto, UpdateApplicationDto } from '../common/dto/application.dto';
+import {
+  CreateApplicationDto,
+  UpdateApplicationDto,
+} from '../common/dto/application.dto';
 import { Role, ApplicationStatus } from '@prisma/client';
 
 @Injectable()
 export class ApplicationService {
   constructor(private prisma: PrismaService) {}
 
-  async createApplication(userId: string, userRole: Role, createApplicationDto: CreateApplicationDto) {
+  async createApplication(
+    userId: string,
+    userRole: Role,
+    createApplicationDto: CreateApplicationDto,
+  ) {
     if (userRole !== Role.CANDIDATE) {
       throw new ForbiddenException('Only candidates can apply to jobs');
     }
@@ -83,7 +95,9 @@ export class ApplicationService {
 
   async getApplicationsByCandidate(userId: string, userRole: Role) {
     if (userRole !== Role.CANDIDATE) {
-      throw new ForbiddenException('Only candidates can view their applications');
+      throw new ForbiddenException(
+        'Only candidates can view their applications',
+      );
     }
 
     const candidate = await this.prisma.candidate.findUnique({
@@ -125,7 +139,9 @@ export class ApplicationService {
     }
 
     if (job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only view applications for your own jobs');
+      throw new ForbiddenException(
+        'You can only view applications for your own jobs',
+      );
     }
 
     return this.prisma.application.findMany({
@@ -168,7 +184,9 @@ export class ApplicationService {
 
     // Only job owner or admin can update application status
     if (application.job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only update applications for your own jobs');
+      throw new ForbiddenException(
+        'You can only update applications for your own jobs',
+      );
     }
 
     return this.prisma.application.update({

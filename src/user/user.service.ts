@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role } from '@prisma/client';
 
@@ -26,11 +30,11 @@ export class UserService {
         },
         applications: {
           include: {
-                            job: {
-                  select: {
-                    title: true,
-                  },
-                },
+            job: {
+              select: {
+                title: true,
+              },
+            },
           },
         },
       },
@@ -43,7 +47,10 @@ export class UserService {
     return user;
   }
 
-  async updateProfile(userId: string, updateData: { name?: string; phone?: string }) {
+  async updateProfile(
+    userId: string,
+    updateData: { name?: string; phone?: string },
+  ) {
     return this.prisma.user.update({
       where: { id: userId },
       data: updateData,
@@ -61,7 +68,9 @@ export class UserService {
 
   async getCandidateProfile(userId: string, userRole: Role) {
     if (userRole !== Role.CANDIDATE) {
-      throw new ForbiddenException('Only candidates can access candidate profile');
+      throw new ForbiddenException(
+        'Only candidates can access candidate profile',
+      );
     }
 
     const candidate = await this.prisma.candidate.findUnique({

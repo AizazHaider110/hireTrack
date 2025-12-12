@@ -11,12 +11,13 @@ export class AdminService {
       throw new ForbiddenException('Only admins can access dashboard stats');
     }
 
-    const [totalUsers, totalJobs, totalApplications, totalCandidates] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.jobPosting.count(),
-      this.prisma.application.count(),
-      this.prisma.candidate.count(),
-    ]);
+    const [totalUsers, totalJobs, totalApplications, totalCandidates] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.jobPosting.count(),
+        this.prisma.application.count(),
+        this.prisma.candidate.count(),
+      ]);
 
     const usersByRole = await this.prisma.user.groupBy({
       by: ['role'],

@@ -4,6 +4,6 @@ import { ApplicationController } from './application.controller';
 
 @Module({
   providers: [ApplicationService],
-  controllers: [ApplicationController]
+  controllers: [ApplicationController],
 })
 export class ApplicationModule {}

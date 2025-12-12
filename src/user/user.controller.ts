@@ -16,7 +16,10 @@ export class UserController {
   }
 
   @Put('profile')
-  async updateProfile(@Body() updateData: { name?: string; phone?: string }, @Req() req: any) {
+  async updateProfile(
+    @Body() updateData: { name?: string; phone?: string },
+    @Req() req: any,
+  ) {
     return this.userService.updateProfile(req.user.id, updateData);
   }
 

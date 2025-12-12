@@ -12,12 +12,15 @@ export interface ParsedResume {
 export class ResumeService {
   constructor(private prisma: PrismaService) {}
 
-  async uploadResume(userId: string, file: Express.Multer.File): Promise<string> {
+  async uploadResume(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<string> {
     // In a real implementation, you would upload to cloud storage (AWS S3, etc.)
     // For now, we'll store the file path locally
     const fileName = `${Date.now()}-${file.originalname}`;
     const filePath = `uploads/${fileName}`;
-    
+
     // Save file to uploads directory
     // In production, use cloud storage
     return filePath;
@@ -29,7 +32,7 @@ export class ResumeService {
     // 1. Use pyresparser via microservice
     // 2. Use resume-parser npm package
     // 3. Use AI services like OpenAI for parsing
-    
+
     // Mock parsing result
     const parsedData: ParsedResume = {
       skills: ['JavaScript', 'TypeScript', 'Node.js', 'NestJS', 'PostgreSQL'],

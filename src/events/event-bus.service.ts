@@ -22,7 +22,11 @@ export class EventBusService {
   /**
    * Publish an event to the internal event bus
    */
-  publish(eventType: string, payload: any, metadata?: Record<string, any>): void {
+  publish(
+    eventType: string,
+    payload: any,
+    metadata?: Record<string, any>,
+  ): void {
     const event: SystemEvent = {
       type: eventType,
       payload,
@@ -37,9 +41,12 @@ export class EventBusService {
   /**
    * Subscribe to events of a specific type
    */
-  subscribe(eventType: string, handler: (event: SystemEvent) => void | Promise<void>): void {
+  subscribe(
+    eventType: string,
+    handler: (event: SystemEvent) => void | Promise<void>,
+  ): void {
     this.logger.debug(`Subscribing to event: ${eventType}`);
-    
+
     // Create a wrapper that handles both sync and async handlers
     const wrappedHandler = async (event: SystemEvent) => {
       try {
@@ -48,22 +55,25 @@ export class EventBusService {
         this.logger.error(`Error handling event ${eventType}:`, error);
       }
     };
-    
+
     // Store the mapping between original handler and wrapped handler
     // This allows proper unsubscription
     if (!(handler as any).__wrappedHandler) {
       (handler as any).__wrappedHandler = wrappedHandler;
     }
-    
+
     this.eventEmitter.on(eventType, (handler as any).__wrappedHandler);
   }
 
   /**
    * Subscribe to events matching a pattern
    */
-  subscribePattern(pattern: RegExp, handler: (event: SystemEvent) => void | Promise<void>): void {
+  subscribePattern(
+    pattern: RegExp,
+    handler: (event: SystemEvent) => void | Promise<void>,
+  ): void {
     this.logger.debug(`Subscribing to event pattern: ${pattern}`);
-    
+
     // Listen to all events and filter by pattern
     const originalEmit = this.eventEmitter.emit.bind(this.eventEmitter);
     this.eventEmitter.emit = function (eventType: string, ...args: any[]) {

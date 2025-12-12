@@ -11,6 +11,7 @@ import { ApplicationModule } from './application/application.module';
 import { ResumeModule } from './resume/resume.module';
 import { AdminModule } from './admin/admin.module';
 import { EventsModule } from './events/events.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { EventsModule } from './events/events.module';
     ]),
     PrismaModule,
     EventsModule,
+    AuditModule,
     AuthModule,
     UserModule,
     JobModule,

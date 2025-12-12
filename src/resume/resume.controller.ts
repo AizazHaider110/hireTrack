@@ -1,4 +1,13 @@
-import { Controller, Post, Get, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ResumeService } from './resume.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -14,13 +23,19 @@ export class ResumeController {
   @Post('upload')
   @Roles(Role.CANDIDATE)
   @UseInterceptors(FileInterceptor('resume'))
-  async uploadResume(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+  async uploadResume(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     if (!file) {
       throw new BadRequestException('Resume file is required');
     }
 
     // Validate file type
-    const allowedMimeTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException('Only PDF and DOCX files are allowed');
     }

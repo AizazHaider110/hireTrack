@@ -116,10 +116,13 @@ export class QueueService implements OnModuleDestroy {
     const worker = new Worker(
       queueName,
       async (job: Job<QueueJobData>) => {
-        this.logger.debug(`Processing job ${job.name} from queue ${queueName}`, {
-          jobId: job.id,
-          attempt: job.attemptsMade + 1,
-        });
+        this.logger.debug(
+          `Processing job ${job.name} from queue ${queueName}`,
+          {
+            jobId: job.id,
+            attempt: job.attemptsMade + 1,
+          },
+        );
 
         try {
           const result = await processor(job);
@@ -150,7 +153,9 @@ export class QueueService implements OnModuleDestroy {
     });
 
     this.workers.set(queueName, worker);
-    this.logger.log(`Registered worker for queue: ${queueName} with concurrency ${concurrency}`);
+    this.logger.log(
+      `Registered worker for queue: ${queueName} with concurrency ${concurrency}`,
+    );
 
     // Set up queue events for monitoring
     const queueEvents = new QueueEvents(queueName, {
@@ -191,7 +196,13 @@ export class QueueService implements OnModuleDestroy {
     delayed: number;
   }> {
     const queue = this.getQueue(queueName);
-    const counts = await queue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed');
+    const counts = await queue.getJobCounts(
+      'waiting',
+      'active',
+      'completed',
+      'failed',
+      'delayed',
+    );
 
     return {
       waiting: counts.waiting || 0,
@@ -223,7 +234,11 @@ export class QueueService implements OnModuleDestroy {
   /**
    * Clean up completed jobs
    */
-  async cleanQueue(queueName: string, grace: number = 0, limit: number = 1000): Promise<void> {
+  async cleanQueue(
+    queueName: string,
+    grace: number = 0,
+    limit: number = 1000,
+  ): Promise<void> {
     const queue = this.getQueue(queueName);
     await queue.clean(grace, limit, 'completed');
     this.logger.log(`Cleaned completed jobs from queue ${queueName}`);

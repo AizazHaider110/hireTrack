@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto, UpdateJobDto } from '../common/dto/job.dto';
 import { Role } from '@prisma/client';
@@ -9,7 +13,7 @@ export class JobService {
 
   async getAllJobs(isActive?: boolean) {
     const where = isActive !== undefined ? { isActive } : {};
-    
+
     return this.prisma.jobPosting.findMany({
       where,
       include: {
@@ -78,7 +82,9 @@ export class JobService {
 
   async createJob(userId: string, userRole: Role, createJobDto: CreateJobDto) {
     if (userRole !== Role.RECRUITER && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('Only recruiters and admins can create jobs');
+      throw new ForbiddenException(
+        'Only recruiters and admins can create jobs',
+      );
     }
 
     return this.prisma.jobPosting.create({
@@ -98,7 +104,12 @@ export class JobService {
     });
   }
 
-  async updateJob(id: string, userId: string, userRole: Role, updateJobDto: UpdateJobDto) {
+  async updateJob(
+    id: string,
+    userId: string,
+    userRole: Role,
+    updateJobDto: UpdateJobDto,
+  ) {
     const job = await this.prisma.jobPosting.findUnique({
       where: { id },
     });
