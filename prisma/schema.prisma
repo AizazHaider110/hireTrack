@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -26,6 +25,7 @@ model User {
   feedback          Feedback[]
   auditLogs         AuditLog[]
   webhooks          Webhook[]
+  workflowRules     WorkflowRule[]
 }
 
 model JobPosting {
@@ -243,6 +243,7 @@ model EmailTemplate {
   variables String[]
   type      EmailTemplateType
   isActive  Boolean           @default(true)
+  metrics   EmailMetrics[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 }
@@ -299,6 +300,46 @@ model JobAnalytics {
   viewsOverTime           Json
   applicationsOverTime    Json
   updatedAt               DateTime @updatedAt
+}
+
+model EmailMetrics {
+  id           String        @id @default(uuid())
+  templateId   String
+  template     EmailTemplate @relation(fields: [templateId], references: [id])
+  sent         Int           @default(0)
+  delivered    Int           @default(0)
+  opened       Int           @default(0)
+  clicked      Int           @default(0)
+  bounced      Int           @default(0)
+  unsubscribed Int           @default(0)
+  date         DateTime      @default(now())
+  
+  @@unique([templateId, date])
+}
+
+model WorkflowRule {
+  id          String              @id @default(uuid())
+  name        String
+  trigger     WorkflowTrigger
+  conditions  Json
+  actions     Json
+  isActive    Boolean             @default(true)
+  createdBy   String
+  creator     User                @relation(fields: [createdBy], references: [id])
+  executions  WorkflowExecution[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model WorkflowExecution {
+  id         String          @id @default(uuid())
+  ruleId     String
+  rule       WorkflowRule    @relation(fields: [ruleId], references: [id])
+  status     ExecutionStatus
+  input      Json
+  output     Json?
+  error      String?
+  executedAt DateTime        @default(now())
 }
 
 // Enhanced existing models
@@ -449,4 +490,23 @@ enum FieldType {
   DROPDOWN
   CHECKBOX
   FILE
+}
+
+enum WorkflowTrigger {
+  APPLICATION_RECEIVED
+  STAGE_CHANGED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  TIME_ELAPSED
+  SCORE_CALCULATED
+  OFFER_SENT
+  CANDIDATE_REJECTED
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
