@@ -43,19 +43,20 @@ export class InterviewController {
       req.user.id,
     );
 
-    // Create calendar event
+    // Create calendar event - skip for now since we need proper user data structure
     try {
-      const calendarEventId = await this.calendarService.createCalendarEvent(interview);
+      // Get full interview data with user information for calendar integration
+      const fullInterview = await this.interviewService.getInterviewById(interview.id);
+      
+      // For now, skip calendar integration until we have proper user data structure
+      // const calendarEventId = await this.calendarService.createCalendarEvent(fullInterview);
       
       // Update interview with calendar event ID
-      await this.interviewService.updateInterview(interview.id, {
-        calendarEventId,
-      });
+      // await this.interviewService.updateInterview(interview.id, {
+      //   calendarEventId,
+      // });
 
-      return {
-        ...interview,
-        calendarEventId,
-      };
+      return interview;
     } catch (error) {
       // Interview was created but calendar event failed
       // Log the error but don't fail the request
@@ -72,15 +73,15 @@ export class InterviewController {
   ) {
     const interview = await this.interviewService.updateInterview(id, updateInterviewDto);
 
-    // Update calendar event if it exists
-    if (interview.calendarEventId) {
-      try {
-        await this.calendarService.updateCalendarEvent(interview.calendarEventId, interview);
-      } catch (error) {
-        console.error('Failed to update calendar event:', error);
-        // Continue with the response even if calendar update fails
-      }
-    }
+    // Update calendar event if it exists - skip for now
+    // if (interview.calendarEventId) {
+    //   try {
+    //     await this.calendarService.updateCalendarEvent(interview.calendarEventId, interview);
+    //   } catch (error) {
+    //     console.error('Failed to update calendar event:', error);
+    //     // Continue with the response even if calendar update fails
+    //   }
+    // }
 
     return interview;
   }
@@ -133,15 +134,15 @@ export class InterviewController {
   ) {
     const participant = await this.interviewService.addParticipant(interviewId, addParticipantDto);
 
-    // Update calendar event to include new participant
-    const interview = await this.interviewService.getInterviewById(interviewId);
-    if (interview.calendarEventId) {
-      try {
-        await this.calendarService.updateCalendarEvent(interview.calendarEventId, interview);
-      } catch (error) {
-        console.error('Failed to update calendar event with new participant:', error);
-      }
-    }
+    // Update calendar event to include new participant - skip for now
+    // const interview = await this.interviewService.getInterviewById(interviewId);
+    // if (interview.calendarEventId) {
+    //   try {
+    //     await this.calendarService.updateCalendarEvent(interview.calendarEventId, interview);
+    //   } catch (error) {
+    //     console.error('Failed to update calendar event with new participant:', error);
+    //   }
+    // }
 
     return participant;
   }

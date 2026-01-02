@@ -225,7 +225,7 @@ export class PipelineService {
     });
 
     return this.prisma.$transaction(async (tx) => {
-      let fromStageId = null;
+      let fromStageId: string | null = null;
 
       // If candidate is already in pipeline, update existing card
       if (currentCard) {
@@ -339,7 +339,7 @@ export class PipelineService {
       throw new ForbiddenException('You can only move candidates in your own job pipelines');
     }
 
-    const results = [];
+    const results: any[] = [];
 
     // Process each candidate
     for (const candidateId of bulkMoveDto.candidateIds) {
@@ -349,7 +349,9 @@ export class PipelineService {
           stageId: bulkMoveDto.stageId,
           reason: bulkMoveDto.reason,
         });
-        results.push(result);
+        if (result) {
+          results.push(result);
+        }
       } catch (error) {
         // Continue with other candidates if one fails
         console.error(`Failed to move candidate ${candidateId}:`, error.message);

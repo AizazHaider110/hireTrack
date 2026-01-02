@@ -70,7 +70,7 @@ export class InterviewService {
     });
 
     // Emit event for interview scheduled
-    await this.eventBus.publish('interview.scheduled', {
+    this.eventBus.publish('interview.scheduled', {
       interviewId: interview.id,
       candidateId: interview.candidateId,
       jobId: interview.jobId,
@@ -123,7 +123,7 @@ export class InterviewService {
     });
 
     // Emit event for interview updated
-    await this.eventBus.publish('interview.updated', {
+    this.eventBus.publish('interview.updated', {
       interviewId: updatedInterview.id,
       candidateId: updatedInterview.candidateId,
       jobId: updatedInterview.jobId,
@@ -164,7 +164,7 @@ export class InterviewService {
     });
 
     // Emit event for interview cancelled
-    await this.eventBus.publish('interview.cancelled', {
+    this.eventBus.publish('interview.cancelled', {
       interviewId: updatedInterview.id,
       candidateId: updatedInterview.candidateId,
       jobId: updatedInterview.jobId,
@@ -219,7 +219,7 @@ export class InterviewService {
     });
 
     // Emit event for participant added
-    await this.eventBus.publish('interview.participant.added', {
+    this.eventBus.publish('interview.participant.added', {
       interviewId,
       participantId: participant.id,
       userId: data.userId,
@@ -259,12 +259,12 @@ export class InterviewService {
         userId,
         rating: data.rating,
         comment: data.comment,
-        isPrivate: data.isPrivate === 'true' || data.isPrivate === true,
+        isPrivate: typeof data.isPrivate === 'boolean' ? data.isPrivate : data.isPrivate === 'true',
       },
     });
 
     // Emit event for feedback submitted
-    await this.eventBus.publish('interview.feedback.submitted', {
+    this.eventBus.publish('interview.feedback.submitted', {
       interviewId,
       feedbackId: feedback.id,
       candidateId: interview.candidateId,
@@ -278,17 +278,7 @@ export class InterviewService {
     return this.prisma.interview.findMany({
       where: { candidateId },
       include: {
-        interviewers: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        interviewers: true,
       },
       orderBy: { scheduledAt: 'desc' },
     });
@@ -309,17 +299,7 @@ export class InterviewService {
             },
           },
         },
-        interviewers: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        interviewers: true,
       },
       orderBy: { scheduledAt: 'desc' },
     });
@@ -405,17 +385,7 @@ export class InterviewService {
             },
           },
         },
-        interviewers: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        interviewers: true,
       },
     });
 
@@ -525,17 +495,7 @@ export class InterviewService {
             },
           },
         },
-        interviewers: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        interviewers: true,
       },
       orderBy: { scheduledAt: 'asc' },
     });
@@ -584,17 +544,7 @@ export class InterviewService {
             },
           },
         },
-        interviewers: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        interviewers: true,
       },
     });
   }
@@ -619,14 +569,14 @@ export class InterviewService {
         }
 
         // Emit event for reminder (would be handled by communication service)
-        await this.eventBus.publish('interview.reminder', {
+        this.eventBus.publish('interview.reminder', {
           interviewId: interview.id,
           candidateId: interview.candidateId,
           reminderType,
           scheduledAt: interview.scheduledAt,
           participants: [
             interview.candidate.user,
-            ...interview.interviewers.map(i => i.user),
+            ...interview.interviewers.map((i: any) => ({ userId: i.userId, role: i.role })),
           ],
         });
 
@@ -655,17 +605,21 @@ export class InterviewService {
           lte: endDate,
         },
       },
-      include: {
-        feedback: true,
-      },
     });
 
     const totalInterviews = interviews.length;
     const completedInterviews = interviews.filter(i => i.status === 'COMPLETED').length;
     const cancelledInterviews = interviews.filter(i => i.status === 'CANCELLED').length;
 
-    // Calculate average rating from all feedback
-    const allFeedback = interviews.flatMap(i => i.feedback);
+    // Get all feedback for these interviews
+    const allFeedback = await this.prisma.feedback.findMany({
+      where: {
+        interviewId: {
+          in: interviews.map(i => i.id),
+        },
+      },
+    });
+
     const averageRating = allFeedback.length > 0 
       ? allFeedback.reduce((sum, f) => sum + f.rating, 0) / allFeedback.length 
       : 0;
@@ -736,16 +690,7 @@ export class InterviewService {
         ],
       },
       include: {
-        interviewers: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        interviewers: true,
       },
     });
 
