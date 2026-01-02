@@ -16,6 +16,7 @@ import { PipelineModule } from './pipeline/pipeline.module';
 import { InterviewModule } from './interview/interview.module';
 import { CommunicationModule } from './communication/communication.module';
 import { ScoringModule } from './scoring/scoring.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ScoringModule } from './scoring/scoring.module';
     InterviewModule,
     CommunicationModule,
     ScoringModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
