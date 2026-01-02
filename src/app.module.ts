@@ -12,6 +12,8 @@ import { ResumeModule } from './resume/resume.module';
 import { AdminModule } from './admin/admin.module';
 import { EventsModule } from './events/events.module';
 import { AuditModule } from './audit/audit.module';
+import { PipelineModule } from './pipeline/pipeline.module';
+import { InterviewModule } from './interview/interview.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { AuditModule } from './audit/audit.module';
     ApplicationModule,
     ResumeModule,
     AdminModule,
+    PipelineModule,
+    InterviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],
