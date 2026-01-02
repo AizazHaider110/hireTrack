@@ -32,6 +32,10 @@ export enum SystemEventType {
   FEEDBACK_SUBMITTED = 'feedback.submitted',
   RATING_UPDATED = 'rating.updated',
 
+  // Scoring events
+  SCORE_CALCULATED = 'score.calculated',
+  SCORES_RECALCULATED = 'scores.recalculated',
+
   // Job events
   JOB_POSTED = 'job.posted',
   JOB_UPDATED = 'job.updated',

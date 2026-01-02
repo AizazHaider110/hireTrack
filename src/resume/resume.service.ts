@@ -1,5 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ResumeParsingService, ParsedResumeData } from './resume-parsing.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface ParsedResume {
   skills: string[];
@@ -10,38 +13,48 @@ export interface ParsedResume {
 
 @Injectable()
 export class ResumeService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(ResumeService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private resumeParsingService: ResumeParsingService,
+  ) {}
 
   async uploadResume(
     userId: string,
     file: Express.Multer.File,
   ): Promise<string> {
-    // In a real implementation, you would upload to cloud storage (AWS S3, etc.)
-    // For now, we'll store the file path locally
+    // Ensure uploads directory exists
+    const uploadsDir = 'uploads';
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
     const fileName = `${Date.now()}-${file.originalname}`;
-    const filePath = `uploads/${fileName}`;
+    const filePath = path.join(uploadsDir, fileName);
 
     // Save file to uploads directory
-    // In production, use cloud storage
+    fs.writeFileSync(filePath, file.buffer);
+    this.logger.log(`Resume uploaded: ${filePath}`);
+
     return filePath;
   }
 
   async parseResume(filePath: string): Promise<ParsedResume> {
-    // Placeholder for resume parsing
-    // In production, you would:
-    // 1. Use pyresparser via microservice
-    // 2. Use resume-parser npm package
-    // 3. Use AI services like OpenAI for parsing
+    // Use the enhanced parsing service
+    const parsedData = await this.resumeParsingService.parseResume(filePath);
 
-    // Mock parsing result
-    const parsedData: ParsedResume = {
-      skills: ['JavaScript', 'TypeScript', 'Node.js', 'NestJS', 'PostgreSQL'],
-      education: 'Bachelor of Science in Computer Science',
-      experience: '3 years of full-stack development experience',
-      rawText: 'Mock resume text content...',
+    return {
+      skills: parsedData.skills,
+      education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
+      experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
+      rawText: parsedData.rawText,
     };
+  }
 
-    return parsedData;
+  async parseResumeEnhanced(filePath: string): Promise<ParsedResumeData> {
+    // Use AI-enhanced parsing if available
+    return this.resumeParsingService.parseResumeWithAI(filePath);
   }
 
   async updateCandidateResume(userId: string, file: Express.Multer.File) {
@@ -57,8 +70,8 @@ export class ResumeService {
     // Upload resume
     const resumeUrl = await this.uploadResume(userId, file);
 
-    // Parse resume
-    const parsedData = await this.parseResume(resumeUrl);
+    // Parse resume using enhanced service
+    const parsedData = await this.resumeParsingService.parseAndStoreResume(candidate.id, resumeUrl);
 
     // Update candidate profile with parsed data
     const updatedCandidate = await this.prisma.candidate.update({
@@ -66,32 +79,23 @@ export class ResumeService {
       data: {
         resumeUrl,
         skills: parsedData.skills,
-        education: parsedData.education,
-        experience: parsedData.experience,
-      },
-    });
-
-    // Store parsed data
-    await this.prisma.resumeParse.upsert({
-      where: { candidateId: candidate.id },
-      update: {
-        skills: parsedData.skills,
-        education: parsedData.education,
-        experience: parsedData.experience,
-        rawText: parsedData.rawText,
-      },
-      create: {
-        candidateId: candidate.id,
-        skills: parsedData.skills,
-        education: parsedData.education,
-        experience: parsedData.experience,
-        rawText: parsedData.rawText,
+        education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
+        experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
       },
     });
 
     return {
       candidate: updatedCandidate,
-      parsedData,
+      parsedData: {
+        skills: parsedData.skills,
+        education: parsedData.education,
+        experience: parsedData.experience,
+        contactInfo: parsedData.contactInfo,
+        summary: parsedData.summary,
+        certifications: parsedData.certifications,
+        languages: parsedData.languages,
+        totalYearsExperience: parsedData.totalYearsExperience,
+      },
     };
   }
 
@@ -108,5 +112,26 @@ export class ResumeService {
     }
 
     return candidate;
+  }
+
+  /**
+   * Flag resume for manual review when parsing fails
+   */
+  async flagResumeForReview(candidateId: string, reason: string): Promise<void> {
+    this.logger.warn(`Resume flagged for manual review: ${candidateId}, reason: ${reason}`);
+    
+    // In production, this could create a task or notification for recruiters
+    await this.prisma.resumeParse.upsert({
+      where: { candidateId },
+      update: {
+        rawText: `FLAGGED FOR REVIEW: ${reason}`,
+        parsedAt: new Date(),
+      },
+      create: {
+        candidateId,
+        skills: [],
+        rawText: `FLAGGED FOR REVIEW: ${reason}`,
+      },
+    });
   }
 }
