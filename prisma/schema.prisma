@@ -3,8 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 model User {
@@ -27,6 +26,8 @@ model User {
   auditLogs         AuditLog[]
   webhooks          Webhook[]
   workflowRules     WorkflowRule[]
+  apiKeys           ApiKey[]
+  savedSearches     SavedSearch[]
 }
 
 model JobPosting {
@@ -278,6 +279,26 @@ model CareerPage {
   updatedAt   DateTime  @updatedAt
 }
 
+model ApiKey {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  keyHash     String    @unique
+  keyPrefix   String    // First 8 chars for identification
+  scopes      String[]
+  isActive    Boolean   @default(true)
+  rateLimit   Int       @default(100) // requests per minute
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([keyHash])
+  @@index([userId])
+}
+
 model CustomApplicationField {
   id         String    @id @default(uuid())
   jobId      String
@@ -343,6 +364,44 @@ model WorkflowExecution {
   executedAt DateTime        @default(now())
 }
 
+model File {
+  id            String       @id @default(uuid())
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  storageKey    String       @unique
+  storageUrl    String?
+  entityType    String       // 'candidate', 'application', 'job', etc.
+  entityId      String
+  uploadedBy    String
+  isDeleted     Boolean      @default(false)
+  deletedAt     DateTime?
+  version       Int          @default(1)
+  parentId      String?      // For version control - points to original file
+  parent        File?        @relation("FileVersions", fields: [parentId], references: [id])
+  versions      File[]       @relation("FileVersions")
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@index([entityType, entityId])
+  @@index([uploadedBy])
+  @@index([isDeleted])
+}
+
+model FileRecovery {
+  id            String   @id @default(uuid())
+  fileId        String
+  originalData  Json     // Stores file metadata for recovery
+  deletedBy     String
+  deletedAt     DateTime @default(now())
+  expiresAt     DateTime // When permanent deletion occurs
+  
+  @@index([fileId])
+  @@index([expiresAt])
+}
+
 // Enhanced existing models
 model Candidate {
   id          String       @id @default(uuid())
@@ -395,6 +454,28 @@ model ResumeParse {
   parsedAt    DateTime   @default(now())
 
   candidate   Candidate  @relation(fields: [candidateId], references: [id])
+}
+
+model SavedSearch {
+  id              String            @id @default(uuid())
+  name            String
+  description     String?
+  query           String
+  entityType      SearchEntityType  @default(ALL)
+  filters         Json?
+  alertEnabled    Boolean           @default(false)
+  alertFrequency  AlertFrequency?
+  isShared        Boolean           @default(false)
+  lastExecutedAt  DateTime?
+  resultCount     Int?
+  createdBy       String
+  creator         User              @relation(fields: [createdBy], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([createdBy])
+  @@index([entityType])
+  @@index([isShared])
 }
 
 // Enums
@@ -510,4 +591,17 @@ enum ExecutionStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum SearchEntityType {
+  CANDIDATE
+  JOB
+  APPLICATION
+  ALL
+}
+
+enum AlertFrequency {
+  IMMEDIATE
+  DAILY
+  WEEKLY
 }
