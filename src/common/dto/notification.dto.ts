@@ -1,4 +1,14 @@
-import { IsString, IsEmail, IsOptional, IsArray, IsBoolean, IsEnum, IsObject, IsUUID, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsObject,
+  IsUUID,
+  IsUrl,
+} from 'class-validator';
 import { WebhookEvent } from '@prisma/client';
 
 export class NotificationDto {

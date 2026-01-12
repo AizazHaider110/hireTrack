@@ -1,4 +1,13 @@
-import { IsString, IsEmail, IsOptional, IsArray, IsBoolean, IsEnum, IsObject, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsObject,
+  IsUUID,
+} from 'class-validator';
 import { EmailTemplateType } from '@prisma/client';
 
 export class CreateEmailTemplateDto {
