@@ -37,7 +37,10 @@ export class InterviewController {
 
   @Post()
   @Roles(Role.RECRUITER, Role.HIRING_MANAGER, Role.ADMIN)
-  async scheduleInterview(@Body() scheduleInterviewDto: ScheduleInterviewDto, @Request() req) {
+  async scheduleInterview(
+    @Body() scheduleInterviewDto: ScheduleInterviewDto,
+    @Request() req,
+  ) {
     const interview = await this.interviewService.scheduleInterview(
       scheduleInterviewDto,
       req.user.id,
@@ -46,11 +49,13 @@ export class InterviewController {
     // Create calendar event - skip for now since we need proper user data structure
     try {
       // Get full interview data with user information for calendar integration
-      const fullInterview = await this.interviewService.getInterviewById(interview.id);
-      
+      const fullInterview = await this.interviewService.getInterviewById(
+        interview.id,
+      );
+
       // For now, skip calendar integration until we have proper user data structure
       // const calendarEventId = await this.calendarService.createCalendarEvent(fullInterview);
-      
+
       // Update interview with calendar event ID
       // await this.interviewService.updateInterview(interview.id, {
       //   calendarEventId,
@@ -71,7 +76,10 @@ export class InterviewController {
     @Param('id') id: string,
     @Body() updateInterviewDto: UpdateInterviewDto,
   ) {
-    const interview = await this.interviewService.updateInterview(id, updateInterviewDto);
+    const interview = await this.interviewService.updateInterview(
+      id,
+      updateInterviewDto,
+    );
 
     // Update calendar event if it exists - skip for now
     // if (interview.calendarEventId) {
@@ -93,12 +101,17 @@ export class InterviewController {
     @Param('id') id: string,
     @Body() cancelInterviewDto: CancelInterviewDto,
   ) {
-    const interview = await this.interviewService.cancelInterview(id, cancelInterviewDto);
+    const interview = await this.interviewService.cancelInterview(
+      id,
+      cancelInterviewDto,
+    );
 
     // Delete calendar event if it exists
     if (interview.calendarEventId) {
       try {
-        await this.calendarService.deleteCalendarEvent(interview.calendarEventId);
+        await this.calendarService.deleteCalendarEvent(
+          interview.calendarEventId,
+        );
       } catch (error) {
         console.error('Failed to delete calendar event:', error);
         // Continue even if calendar deletion fails
@@ -132,7 +145,10 @@ export class InterviewController {
     @Param('id') interviewId: string,
     @Body() addParticipantDto: AddParticipantDto,
   ) {
-    const participant = await this.interviewService.addParticipant(interviewId, addParticipantDto);
+    const participant = await this.interviewService.addParticipant(
+      interviewId,
+      addParticipantDto,
+    );
 
     // Update calendar event to include new participant - skip for now
     // const interview = await this.interviewService.getInterviewById(interviewId);
@@ -154,7 +170,11 @@ export class InterviewController {
     @Body() feedbackDto: FeedbackDto,
     @Request() req,
   ) {
-    return this.interviewService.submitFeedback(interviewId, req.user.id, feedbackDto);
+    return this.interviewService.submitFeedback(
+      interviewId,
+      req.user.id,
+      feedbackDto,
+    );
   }
 
   @Post('availability/check')
@@ -172,7 +192,7 @@ export class InterviewController {
   ) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     return this.calendarService.getAvailability(userId, start, end);
   }
 
@@ -182,7 +202,10 @@ export class InterviewController {
     @Param('provider') provider: string,
     @Request() req,
   ) {
-    const authUrl = await this.calendarService.getAuthUrl(provider, req.user.id);
+    const authUrl = await this.calendarService.getAuthUrl(
+      provider,
+      req.user.id,
+    );
     return { authUrl };
   }
 
@@ -202,7 +225,10 @@ export class InterviewController {
 
   @Get('upcoming')
   @Roles(Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.ADMIN)
-  async getUpcomingInterviews(@Request() req, @Query('days') days: string = '7') {
+  async getUpcomingInterviews(
+    @Request() req,
+    @Query('days') days: string = '7',
+  ) {
     const daysAhead = parseInt(days, 10);
     return this.interviewService.getUpcomingInterviews(req.user.id, daysAhead);
   }
@@ -219,7 +245,9 @@ export class InterviewController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
     return this.interviewService.getInterviewAnalytics(start, end);

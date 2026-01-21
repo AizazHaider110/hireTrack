@@ -1,14 +1,19 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventBusService } from '../events/event-bus.service';
-import { 
-  ScheduleInterviewDto, 
-  UpdateInterviewDto, 
-  AddParticipantDto, 
-  FeedbackDto, 
+import {
+  ScheduleInterviewDto,
+  UpdateInterviewDto,
+  AddParticipantDto,
+  FeedbackDto,
   AvailabilityCheckDto,
   CancelInterviewDto,
-  TimeSlotDto
+  TimeSlotDto,
 } from '../common/dto/interview.dto';
 
 @Injectable()
@@ -38,8 +43,12 @@ export class InterviewService {
     // Check for scheduling conflicts
     const scheduledAt = new Date(data.scheduledAt);
     const endTime = new Date(scheduledAt.getTime() + data.duration * 60000);
-    
-    await this.checkSchedulingConflicts(data.participants?.map(p => p.userId) || [], scheduledAt, endTime);
+
+    await this.checkSchedulingConflicts(
+      data.participants?.map((p) => p.userId) || [],
+      scheduledAt,
+      endTime,
+    );
 
     // Create interview
     const interview = await this.prisma.interview.create({
@@ -53,10 +62,11 @@ export class InterviewService {
         notes: data.notes,
         createdBy,
         interviewers: {
-          create: data.participants?.map(p => ({
-            userId: p.userId,
-            role: p.role,
-          })) || [],
+          create:
+            data.participants?.map((p) => ({
+              userId: p.userId,
+              role: p.role,
+            })) || [],
         },
       },
       include: {
@@ -93,12 +103,21 @@ export class InterviewService {
 
     // Check for scheduling conflicts if time is being updated
     if (data.scheduledAt || data.duration) {
-      const scheduledAt = data.scheduledAt ? new Date(data.scheduledAt) : existingInterview.scheduledAt;
+      const scheduledAt = data.scheduledAt
+        ? new Date(data.scheduledAt)
+        : existingInterview.scheduledAt;
       const duration = data.duration || existingInterview.duration;
       const endTime = new Date(scheduledAt.getTime() + duration * 60000);
-      
-      const participantIds = existingInterview.interviewers.map(p => p.userId);
-      await this.checkSchedulingConflicts(participantIds, scheduledAt, endTime, id);
+
+      const participantIds = existingInterview.interviewers.map(
+        (p) => p.userId,
+      );
+      await this.checkSchedulingConflicts(
+        participantIds,
+        scheduledAt,
+        endTime,
+        id,
+      );
     }
 
     const updatedInterview = await this.prisma.interview.update({
@@ -151,7 +170,9 @@ export class InterviewService {
       where: { id },
       data: {
         status: 'CANCELLED',
-        notes: interview.notes ? `${interview.notes}\n\nCancelled: ${data.reason}` : `Cancelled: ${data.reason}`,
+        notes: interview.notes
+          ? `${interview.notes}\n\nCancelled: ${data.reason}`
+          : `Cancelled: ${data.reason}`,
       },
       include: {
         interviewers: true,
@@ -193,22 +214,31 @@ export class InterviewService {
     }
 
     // Check if participant already exists
-    const existingParticipant = await this.prisma.interviewParticipant.findUnique({
-      where: {
-        interviewId_userId: {
-          interviewId,
-          userId: data.userId,
+    const existingParticipant =
+      await this.prisma.interviewParticipant.findUnique({
+        where: {
+          interviewId_userId: {
+            interviewId,
+            userId: data.userId,
+          },
         },
-      },
-    });
+      });
 
     if (existingParticipant) {
-      throw new ConflictException('User is already a participant in this interview');
+      throw new ConflictException(
+        'User is already a participant in this interview',
+      );
     }
 
     // Check for scheduling conflicts
-    const endTime = new Date(interview.scheduledAt.getTime() + interview.duration * 60000);
-    await this.checkSchedulingConflicts([data.userId], interview.scheduledAt, endTime);
+    const endTime = new Date(
+      interview.scheduledAt.getTime() + interview.duration * 60000,
+    );
+    await this.checkSchedulingConflicts(
+      [data.userId],
+      interview.scheduledAt,
+      endTime,
+    );
 
     const participant = await this.prisma.interviewParticipant.create({
       data: {
@@ -249,7 +279,9 @@ export class InterviewService {
     });
 
     if (!participant) {
-      throw new BadRequestException('User is not a participant in this interview');
+      throw new BadRequestException(
+        'User is not a participant in this interview',
+      );
     }
 
     const feedback = await this.prisma.feedback.create({
@@ -259,7 +291,10 @@ export class InterviewService {
         userId,
         rating: data.rating,
         comment: data.comment,
-        isPrivate: typeof data.isPrivate === 'boolean' ? data.isPrivate : data.isPrivate === 'true',
+        isPrivate:
+          typeof data.isPrivate === 'boolean'
+            ? data.isPrivate
+            : data.isPrivate === 'true',
       },
     });
 
@@ -305,10 +340,12 @@ export class InterviewService {
     });
   }
 
-  async getAvailableTimeSlots(data: AvailabilityCheckDto): Promise<TimeSlotDto[]> {
+  async getAvailableTimeSlots(
+    data: AvailabilityCheckDto,
+  ): Promise<TimeSlotDto[]> {
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
-    
+
     // Get all interviews for the participants in the date range
     const existingInterviews = await this.prisma.interview.findMany({
       where: {
@@ -335,28 +372,34 @@ export class InterviewService {
     // Generate available time slots (simplified logic)
     const timeSlots: TimeSlotDto[] = [];
     const workingHours = { start: 9, end: 17 }; // 9 AM to 5 PM
-    
-    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+
+    for (
+      let date = new Date(startDate);
+      date <= endDate;
+      date.setDate(date.getDate() + 1)
+    ) {
       // Skip weekends
       if (date.getDay() === 0 || date.getDay() === 6) continue;
-      
+
       for (let hour = workingHours.start; hour < workingHours.end; hour++) {
         const slotStart = new Date(date);
         slotStart.setHours(hour, 0, 0, 0);
-        
+
         const slotEnd = new Date(slotStart);
         slotEnd.setTime(slotEnd.getTime() + data.duration * 60000);
-        
+
         // Check if this slot conflicts with existing interviews
-        const hasConflict = existingInterviews.some(interview => {
-          const interviewEnd = new Date(interview.scheduledAt.getTime() + interview.duration * 60000);
+        const hasConflict = existingInterviews.some((interview) => {
+          const interviewEnd = new Date(
+            interview.scheduledAt.getTime() + interview.duration * 60000,
+          );
           return (
             (slotStart >= interview.scheduledAt && slotStart < interviewEnd) ||
             (slotEnd > interview.scheduledAt && slotEnd <= interviewEnd) ||
             (slotStart <= interview.scheduledAt && slotEnd >= interviewEnd)
           );
         });
-        
+
         if (!hasConflict) {
           timeSlots.push({
             startTime: slotStart.toISOString(),
@@ -366,7 +409,7 @@ export class InterviewService {
         }
       }
     }
-    
+
     return timeSlots;
   }
 
@@ -427,7 +470,7 @@ export class InterviewService {
     feedback: any[];
   }> {
     const feedback = await this.getInterviewFeedback(interviewId);
-    
+
     if (feedback.length === 0) {
       return {
         averageRating: 0,
@@ -437,12 +480,16 @@ export class InterviewService {
       };
     }
 
-    const ratings = feedback.reduce((acc, f) => {
-      acc[f.rating] = (acc[f.rating] || 0) + 1;
-      return acc;
-    }, {} as { [key: number]: number });
+    const ratings = feedback.reduce(
+      (acc, f) => {
+        acc[f.rating] = (acc[f.rating] || 0) + 1;
+        return acc;
+      },
+      {} as { [key: number]: number },
+    );
 
-    const averageRating = feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length;
+    const averageRating =
+      feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length;
 
     return {
       averageRating: Math.round(averageRating * 100) / 100,
@@ -503,7 +550,9 @@ export class InterviewService {
 
   async getInterviewsNeedingReminders() {
     const now = new Date();
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const twentyFourHoursFromNow = new Date(
+      now.getTime() + 24 * 60 * 60 * 1000,
+    );
     const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
     return this.prisma.interview.findMany({
@@ -558,7 +607,7 @@ export class InterviewService {
       try {
         const timeUntilInterview = interview.scheduledAt.getTime() - Date.now();
         const hoursUntil = Math.round(timeUntilInterview / (60 * 60 * 1000));
-        
+
         let reminderType: string;
         if (hoursUntil >= 20 && hoursUntil <= 28) {
           reminderType = '24-hour';
@@ -576,13 +625,19 @@ export class InterviewService {
           scheduledAt: interview.scheduledAt,
           participants: [
             interview.candidate.user,
-            ...interview.interviewers.map((i: any) => ({ userId: i.userId, role: i.role })),
+            ...interview.interviewers.map((i: any) => ({
+              userId: i.userId,
+              role: i.role,
+            })),
           ],
         });
 
         sent++;
       } catch (error) {
-        console.error(`Failed to send reminder for interview ${interview.id}:`, error);
+        console.error(
+          `Failed to send reminder for interview ${interview.id}:`,
+          error,
+        );
         failed++;
       }
     }
@@ -590,7 +645,10 @@ export class InterviewService {
     return { sent, failed };
   }
 
-  async getInterviewAnalytics(startDate: Date, endDate: Date): Promise<{
+  async getInterviewAnalytics(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{
     totalInterviews: number;
     completedInterviews: number;
     cancelledInterviews: number;
@@ -608,33 +666,44 @@ export class InterviewService {
     });
 
     const totalInterviews = interviews.length;
-    const completedInterviews = interviews.filter(i => i.status === 'COMPLETED').length;
-    const cancelledInterviews = interviews.filter(i => i.status === 'CANCELLED').length;
+    const completedInterviews = interviews.filter(
+      (i) => i.status === 'COMPLETED',
+    ).length;
+    const cancelledInterviews = interviews.filter(
+      (i) => i.status === 'CANCELLED',
+    ).length;
 
     // Get all feedback for these interviews
     const allFeedback = await this.prisma.feedback.findMany({
       where: {
         interviewId: {
-          in: interviews.map(i => i.id),
+          in: interviews.map((i) => i.id),
         },
       },
     });
 
-    const averageRating = allFeedback.length > 0 
-      ? allFeedback.reduce((sum, f) => sum + f.rating, 0) / allFeedback.length 
-      : 0;
+    const averageRating =
+      allFeedback.length > 0
+        ? allFeedback.reduce((sum, f) => sum + f.rating, 0) / allFeedback.length
+        : 0;
 
     // Group by type
-    const interviewsByType = interviews.reduce((acc, interview) => {
-      acc[interview.type] = (acc[interview.type] || 0) + 1;
-      return acc;
-    }, {} as { [key: string]: number });
+    const interviewsByType = interviews.reduce(
+      (acc, interview) => {
+        acc[interview.type] = (acc[interview.type] || 0) + 1;
+        return acc;
+      },
+      {} as { [key: string]: number },
+    );
 
     // Group by status
-    const interviewsByStatus = interviews.reduce((acc, interview) => {
-      acc[interview.status] = (acc[interview.status] || 0) + 1;
-      return acc;
-    }, {} as { [key: string]: number });
+    const interviewsByStatus = interviews.reduce(
+      (acc, interview) => {
+        acc[interview.status] = (acc[interview.status] || 0) + 1;
+        return acc;
+      },
+      {} as { [key: string]: number },
+    );
 
     return {
       totalInterviews,
@@ -715,20 +784,28 @@ export class InterviewService {
     });
 
     // Filter for actual time conflicts
-    const actualConflicts = additionalConflicts.filter(interview => {
-      const interviewEndTime = new Date(interview.scheduledAt.getTime() + interview.duration * 60000);
+    const actualConflicts = additionalConflicts.filter((interview) => {
+      const interviewEndTime = new Date(
+        interview.scheduledAt.getTime() + interview.duration * 60000,
+      );
       return interviewEndTime > startTime;
     });
 
     const allConflicts = [...conflicts, ...actualConflicts];
 
     if (allConflicts.length > 0) {
-      const conflictDetails = allConflicts.map(interview => {
-        const interviewEndTime = new Date(interview.scheduledAt.getTime() + interview.duration * 60000);
-        return `Interview on ${interview.scheduledAt.toISOString()} - ${interviewEndTime.toISOString()}`;
-      }).join(', ');
-      
-      throw new ConflictException(`Scheduling conflict detected: ${conflictDetails}`);
+      const conflictDetails = allConflicts
+        .map((interview) => {
+          const interviewEndTime = new Date(
+            interview.scheduledAt.getTime() + interview.duration * 60000,
+          );
+          return `Interview on ${interview.scheduledAt.toISOString()} - ${interviewEndTime.toISOString()}`;
+        })
+        .join(', ');
+
+      throw new ConflictException(
+        `Scheduling conflict detected: ${conflictDetails}`,
+      );
     }
   }
 }
