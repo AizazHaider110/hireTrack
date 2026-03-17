@@ -1,16 +1,26 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../events/queue.service';
 import { EventBusService } from '../events/event-bus.service';
 import { QueueName, JobName } from '../events/event-types';
-import { 
-  CreateEmailTemplateDto, 
-  UpdateEmailTemplateDto, 
+import {
+  CreateEmailTemplateDto,
+  UpdateEmailTemplateDto,
   SendTemplateEmailDto,
   BulkEmailDto,
-  EmailMetricsResponseDto 
+  EmailMetricsResponseDto,
 } from '../common/dto/email.dto';
-import { EmailTemplate, EmailTemplateType, EmailStatus, EmailMetrics } from '@prisma/client';
+import {
+  EmailTemplate,
+  EmailTemplateType,
+  EmailStatus,
+  EmailMetrics,
+} from '@prisma/client';
 
 @Injectable()
 export class EmailService {
@@ -27,19 +37,21 @@ export class EmailService {
    */
   async sendTemplateEmail(data: SendTemplateEmailDto): Promise<void> {
     const template = await this.getActiveTemplateByType(data.templateType);
-    
+
     if (!template) {
-      throw new NotFoundException(`No active template found for type: ${data.templateType}`);
+      throw new NotFoundException(
+        `No active template found for type: ${data.templateType}`,
+      );
     }
 
     // Validate that all required variables are provided
     const missingVariables = template.variables.filter(
-      variable => !(variable in data.variables)
+      (variable) => !(variable in data.variables),
     );
 
     if (missingVariables.length > 0) {
       throw new BadRequestException(
-        `Missing required template variables: ${missingVariables.join(', ')}`
+        `Missing required template variables: ${missingVariables.join(', ')}`,
       );
     }
 
@@ -55,7 +67,9 @@ export class EmailService {
         body,
         templateId: template.id,
         variables: data.variables,
-        scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : undefined,
+        scheduledFor: data.scheduledFor
+          ? new Date(data.scheduledFor)
+          : undefined,
         status: EmailStatus.PENDING,
       },
     });
@@ -75,16 +89,20 @@ export class EmailService {
         },
       },
       {
-        delay: data.scheduledFor ? new Date(data.scheduledFor).getTime() - Date.now() : 0,
+        delay: data.scheduledFor
+          ? new Date(data.scheduledFor).getTime() - Date.now()
+          : 0,
         attempts: 3,
         backoff: {
           type: 'exponential',
           delay: 2000,
         },
-      }
+      },
     );
 
-    this.logger.log(`Queued template email for ${data.to} using template ${template.name}`);
+    this.logger.log(
+      `Queued template email for ${data.to} using template ${template.name}`,
+    );
 
     // Publish event
     this.eventBus.publish('email.queued', {
@@ -107,7 +125,10 @@ export class EmailService {
         if (email.templateId) {
           const template = await this.getTemplateById(email.templateId);
           if (template && email.variables) {
-            subject = this.substituteVariables(template.subject, email.variables);
+            subject = this.substituteVariables(
+              template.subject,
+              email.variables,
+            );
             body = this.substituteVariables(template.body, email.variables);
           }
         }
@@ -122,7 +143,7 @@ export class EmailService {
             status: EmailStatus.PENDING,
           },
         });
-      })
+      }),
     );
 
     // Queue bulk email job
@@ -132,7 +153,7 @@ export class EmailService {
       {
         type: 'bulk_email',
         payload: {
-          emailJobIds: emailJobs.map(job => job.id),
+          emailJobIds: emailJobs.map((job) => job.id),
         },
       },
       {
@@ -141,7 +162,7 @@ export class EmailService {
           type: 'exponential',
           delay: 2000,
         },
-      }
+      },
     );
 
     this.logger.log(`Queued ${emails.length} bulk emails`);
@@ -149,7 +170,7 @@ export class EmailService {
     // Publish event
     this.eventBus.publish('email.bulk_queued', {
       count: emails.length,
-      emailJobIds: emailJobs.map(job => job.id),
+      emailJobIds: emailJobs.map((job) => job.id),
     });
   }
 
@@ -183,7 +204,10 @@ export class EmailService {
   /**
    * Update email template
    */
-  async updateTemplate(id: string, data: UpdateEmailTemplateDto): Promise<EmailTemplate> {
+  async updateTemplate(
+    id: string,
+    data: UpdateEmailTemplateDto,
+  ): Promise<EmailTemplate> {
     const existingTemplate = await this.getTemplateById(id);
     if (!existingTemplate) {
       throw new NotFoundException(`Email template with ID ${id} not found`);
@@ -235,7 +259,9 @@ export class EmailService {
   /**
    * Get active template by type
    */
-  async getActiveTemplateByType(type: EmailTemplateType): Promise<EmailTemplate | null> {
+  async getActiveTemplateByType(
+    type: EmailTemplateType,
+  ): Promise<EmailTemplate | null> {
     return this.prisma.emailTemplate.findFirst({
       where: {
         type,
@@ -270,10 +296,14 @@ export class EmailService {
   /**
    * Track email metrics
    */
-  async trackEmailMetrics(templateId: string): Promise<EmailMetricsResponseDto> {
+  async trackEmailMetrics(
+    templateId: string,
+  ): Promise<EmailMetricsResponseDto> {
     const template = await this.getTemplateById(templateId);
     if (!template) {
-      throw new NotFoundException(`Email template with ID ${templateId} not found`);
+      throw new NotFoundException(
+        `Email template with ID ${templateId} not found`,
+      );
     }
 
     // Get today's metrics
@@ -300,10 +330,14 @@ export class EmailService {
     }
 
     // Calculate rates
-    const openRate = metrics.sent > 0 ? (metrics.opened / metrics.sent) * 100 : 0;
-    const clickRate = metrics.opened > 0 ? (metrics.clicked / metrics.opened) * 100 : 0;
-    const bounceRate = metrics.sent > 0 ? (metrics.bounced / metrics.sent) * 100 : 0;
-    const unsubscribeRate = metrics.sent > 0 ? (metrics.unsubscribed / metrics.sent) * 100 : 0;
+    const openRate =
+      metrics.sent > 0 ? (metrics.opened / metrics.sent) * 100 : 0;
+    const clickRate =
+      metrics.opened > 0 ? (metrics.clicked / metrics.opened) * 100 : 0;
+    const bounceRate =
+      metrics.sent > 0 ? (metrics.bounced / metrics.sent) * 100 : 0;
+    const unsubscribeRate =
+      metrics.sent > 0 ? (metrics.unsubscribed / metrics.sent) * 100 : 0;
 
     return {
       templateId: template.id,
@@ -327,8 +361,14 @@ export class EmailService {
    */
   async updateEmailMetrics(
     templateId: string,
-    action: 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed',
-    count: number = 1
+    action:
+      | 'sent'
+      | 'delivered'
+      | 'opened'
+      | 'clicked'
+      | 'bounced'
+      | 'unsubscribed',
+    count: number = 1,
   ): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -352,7 +392,9 @@ export class EmailService {
       },
     });
 
-    this.logger.debug(`Updated email metrics for template ${templateId}: ${action} +${count}`);
+    this.logger.debug(
+      `Updated email metrics for template ${templateId}: ${action} +${count}`,
+    );
   }
 
   /**
@@ -380,7 +422,7 @@ export class EmailService {
   async updateEmailJobStatus(
     jobId: string,
     status: EmailStatus,
-    error?: string
+    error?: string,
   ): Promise<void> {
     const updateData: any = {
       status,
@@ -408,9 +450,12 @@ export class EmailService {
   /**
    * Substitute variables in template text
    */
-  private substituteVariables(text: string, variables: Record<string, any>): string {
+  private substituteVariables(
+    text: string,
+    variables: Record<string, any>,
+  ): string {
     let result = text;
-    
+
     for (const [key, value] of Object.entries(variables)) {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
       result = result.replace(regex, String(value));
@@ -425,7 +470,7 @@ export class EmailService {
   async getEmailStatistics(
     startDate: Date,
     endDate: Date,
-    templateId?: string
+    templateId?: string,
   ): Promise<{
     totalSent: number;
     totalDelivered: number;
@@ -468,12 +513,17 @@ export class EmailService {
         totalClicked: 0,
         totalBounced: 0,
         totalUnsubscribed: 0,
-      }
+      },
     );
 
-    const averageOpenRate = totals.totalSent > 0 ? (totals.totalOpened / totals.totalSent) * 100 : 0;
-    const averageClickRate = totals.totalOpened > 0 ? (totals.totalClicked / totals.totalOpened) * 100 : 0;
-    const averageBounceRate = totals.totalSent > 0 ? (totals.totalBounced / totals.totalSent) * 100 : 0;
+    const averageOpenRate =
+      totals.totalSent > 0 ? (totals.totalOpened / totals.totalSent) * 100 : 0;
+    const averageClickRate =
+      totals.totalOpened > 0
+        ? (totals.totalClicked / totals.totalOpened) * 100
+        : 0;
+    const averageBounceRate =
+      totals.totalSent > 0 ? (totals.totalBounced / totals.totalSent) * 100 : 0;
 
     return {
       ...totals,

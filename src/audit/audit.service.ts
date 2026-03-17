@@ -42,9 +42,15 @@ export class AuditService {
           action: data.action,
           resource: data.resource,
           resourceId: data.resourceId,
-          before: data.before ? (data.before as Prisma.InputJsonValue) : Prisma.JsonNull,
-          after: data.after ? (data.after as Prisma.InputJsonValue) : Prisma.JsonNull,
-          metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+          before: data.before
+            ? (data.before as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+          after: data.after
+            ? (data.after as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+          metadata: data.metadata
+            ? (data.metadata as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
           timestamp: new Date(),

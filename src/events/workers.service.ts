@@ -1,13 +1,38 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { QueueName, JobName } from './event-types';
 import { Job } from 'bullmq';
 
+// Forward reference to avoid circular dependency
+interface WebhookDeliveryServiceInterface {
+  executeDelivery(
+    deliveryId: string,
+    webhookUrl: string,
+    secret: string,
+    payload: any,
+  ): Promise<any>;
+}
+
 @Injectable()
 export class WorkersService implements OnModuleInit {
   private readonly logger = new Logger(WorkersService.name);
+  private webhookDeliveryService: WebhookDeliveryServiceInterface | null = null;
 
   constructor(private readonly queueService: QueueService) {}
+
+  /**
+   * Set webhook delivery service (called from module initialization)
+   */
+  setWebhookDeliveryService(service: WebhookDeliveryServiceInterface): void {
+    this.webhookDeliveryService = service;
+    this.logger.log('WebhookDeliveryService injected into WorkersService');
+  }
 
   async onModuleInit() {
     this.logger.log('Initializing queue workers...');
@@ -171,19 +196,18 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendEmail(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
       // In a real implementation, this would use an email service like SendGrid, AWS SES, etc.
       // For now, we'll just log and update the job status
       this.logger.log(`Sending email to ${payload.to}: ${payload.subject}`);
-      
+
       // Simulate email sending delay
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Update email job status to sent
       // This would be handled by the actual email service integration
       this.logger.log(`Email sent successfully to ${payload.to}`);
-      
     } catch (error) {
       this.logger.error(`Failed to send email to ${payload.to}:`, error);
       throw error;
@@ -192,19 +216,22 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendBulkEmail(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
-      this.logger.log(`Processing bulk email job with ${payload.emailJobIds.length} emails`);
-      
+      this.logger.log(
+        `Processing bulk email job with ${payload.emailJobIds.length} emails`,
+      );
+
       // In a real implementation, this would batch process emails
       for (const emailJobId of payload.emailJobIds) {
         // Simulate processing each email
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         this.logger.debug(`Processed email job ${emailJobId}`);
       }
-      
-      this.logger.log(`Bulk email job completed: ${payload.emailJobIds.length} emails processed`);
-      
+
+      this.logger.log(
+        `Bulk email job completed: ${payload.emailJobIds.length} emails processed`,
+      );
     } catch (error) {
       this.logger.error('Failed to process bulk email job:', error);
       throw error;
@@ -220,25 +247,30 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendNotification(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
       if (payload.notifications) {
         // Bulk notifications
-        this.logger.log(`Processing ${payload.notifications.length} bulk notifications`);
-        
+        this.logger.log(
+          `Processing ${payload.notifications.length} bulk notifications`,
+        );
+
         for (const notification of payload.notifications) {
           // Simulate sending notification
-          await new Promise(resolve => setTimeout(resolve, 50));
-          this.logger.debug(`Sent notification to ${notification.to}: ${notification.subject}`);
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          this.logger.debug(
+            `Sent notification to ${notification.to}: ${notification.subject}`,
+          );
         }
       } else {
         // Single notification
-        this.logger.log(`Sending notification to ${payload.to}: ${payload.subject}`);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        this.logger.log(
+          `Sending notification to ${payload.to}: ${payload.subject}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      
+
       this.logger.log('Notification job processed successfully');
-      
     } catch (error) {
       this.logger.error('Failed to process notification job:', error);
       throw error;
@@ -247,15 +279,16 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendInterviewInvitation(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
-      this.logger.log(`Sending interview invitation for interview ${payload.interviewId}`);
-      
+      this.logger.log(
+        `Sending interview invitation for interview ${payload.interviewId}`,
+      );
+
       // Simulate sending interview invitation
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       this.logger.log('Interview invitation sent successfully');
-      
     } catch (error) {
       this.logger.error('Failed to send interview invitation:', error);
       throw error;
@@ -264,15 +297,16 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendApplicationConfirmation(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
-      this.logger.log(`Sending application confirmation for application ${payload.applicationId}`);
-      
+      this.logger.log(
+        `Sending application confirmation for application ${payload.applicationId}`,
+      );
+
       // Simulate sending application confirmation
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       this.logger.log('Application confirmation sent successfully');
-      
     } catch (error) {
       this.logger.error('Failed to send application confirmation:', error);
       throw error;
@@ -281,15 +315,16 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendRejectionEmail(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
-      this.logger.log(`Sending rejection email for candidate ${payload.candidateId}`);
-      
+      this.logger.log(
+        `Sending rejection email for candidate ${payload.candidateId}`,
+      );
+
       // Simulate sending rejection email
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       this.logger.log('Rejection email sent successfully');
-      
     } catch (error) {
       this.logger.error('Failed to send rejection email:', error);
       throw error;
@@ -298,15 +333,16 @@ export class WorkersService implements OnModuleInit {
 
   private async processSendOfferEmail(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
-      this.logger.log(`Sending offer email for candidate ${payload.candidateId}`);
-      
+      this.logger.log(
+        `Sending offer email for candidate ${payload.candidateId}`,
+      );
+
       // Simulate sending offer email
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       this.logger.log('Offer email sent successfully');
-      
     } catch (error) {
       this.logger.error('Failed to send offer email:', error);
       throw error;
@@ -315,30 +351,54 @@ export class WorkersService implements OnModuleInit {
 
   private async processDeliverWebhook(job: Job): Promise<void> {
     const { payload } = job.data;
-    
+
     try {
       this.logger.debug(`Delivering webhook to ${payload.webhookUrl}`, {
         deliveryId: payload.deliveryId,
         event: payload.event,
       });
-      
-      // In a real implementation, this would make HTTP POST request to webhook URL
-      // with proper signature verification using the secret
-      
-      // Simulate webhook delivery
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Simulate success/failure based on URL (for testing)
-      const shouldFail = payload.webhookUrl.includes('fail');
-      
-      if (shouldFail) {
-        throw new Error('Webhook delivery failed (simulated)');
+
+      // Use the webhook delivery service if available
+      if (this.webhookDeliveryService) {
+        const result = await this.webhookDeliveryService.executeDelivery(
+          payload.deliveryId,
+          payload.webhookUrl,
+          payload.secret,
+          payload.payload,
+        );
+
+        if (!result.success) {
+          throw new Error(result.error || `HTTP ${result.statusCode}`);
+        }
+
+        this.logger.log(
+          `Webhook delivered successfully to ${payload.webhookUrl}`,
+        );
+      } else {
+        // Fallback: simulate webhook delivery if service not available
+        this.logger.warn(
+          'WebhookDeliveryService not available, simulating delivery',
+        );
+
+        // Simulate webhook delivery
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Simulate success/failure based on URL (for testing)
+        const shouldFail = payload.webhookUrl.includes('fail');
+
+        if (shouldFail) {
+          throw new Error('Webhook delivery failed (simulated)');
+        }
+
+        this.logger.log(
+          `Webhook delivered successfully to ${payload.webhookUrl} (simulated)`,
+        );
       }
-      
-      this.logger.log(`Webhook delivered successfully to ${payload.webhookUrl}`);
-      
     } catch (error) {
-      this.logger.error(`Failed to deliver webhook to ${payload.webhookUrl}:`, error);
+      this.logger.error(
+        `Failed to deliver webhook to ${payload.webhookUrl}:`,
+        error,
+      );
       throw error;
     }
   }

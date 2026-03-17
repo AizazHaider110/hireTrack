@@ -1,6 +1,9 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ResumeParsingService, ParsedResumeData } from './resume-parsing.service';
+import {
+  ResumeParsingService,
+  ParsedResumeData,
+} from './resume-parsing.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -46,8 +49,12 @@ export class ResumeService {
 
     return {
       skills: parsedData.skills,
-      education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
-      experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
+      education: parsedData.education
+        .map((e) => `${e.degree} - ${e.institution}`)
+        .join('; '),
+      experience: parsedData.experience
+        .map((e) => `${e.title} at ${e.company}`)
+        .join('; '),
       rawText: parsedData.rawText,
     };
   }
@@ -71,7 +78,10 @@ export class ResumeService {
     const resumeUrl = await this.uploadResume(userId, file);
 
     // Parse resume using enhanced service
-    const parsedData = await this.resumeParsingService.parseAndStoreResume(candidate.id, resumeUrl);
+    const parsedData = await this.resumeParsingService.parseAndStoreResume(
+      candidate.id,
+      resumeUrl,
+    );
 
     // Update candidate profile with parsed data
     const updatedCandidate = await this.prisma.candidate.update({
@@ -79,8 +89,12 @@ export class ResumeService {
       data: {
         resumeUrl,
         skills: parsedData.skills,
-        education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
-        experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
+        education: parsedData.education
+          .map((e) => `${e.degree} - ${e.institution}`)
+          .join('; '),
+        experience: parsedData.experience
+          .map((e) => `${e.title} at ${e.company}`)
+          .join('; '),
       },
     });
 
@@ -117,9 +131,14 @@ export class ResumeService {
   /**
    * Flag resume for manual review when parsing fails
    */
-  async flagResumeForReview(candidateId: string, reason: string): Promise<void> {
-    this.logger.warn(`Resume flagged for manual review: ${candidateId}, reason: ${reason}`);
-    
+  async flagResumeForReview(
+    candidateId: string,
+    reason: string,
+  ): Promise<void> {
+    this.logger.warn(
+      `Resume flagged for manual review: ${candidateId}, reason: ${reason}`,
+    );
+
     // In production, this could create a task or notification for recruiters
     await this.prisma.resumeParse.upsert({
       where: { candidateId },

@@ -35,7 +35,9 @@ export class EmailController {
   @Post('send-template')
   @Roles(Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER)
   @HttpCode(HttpStatus.ACCEPTED)
-  async sendTemplateEmail(@Body() data: SendTemplateEmailDto): Promise<{ message: string }> {
+  async sendTemplateEmail(
+    @Body() data: SendTemplateEmailDto,
+  ): Promise<{ message: string }> {
     await this.emailService.sendTemplateEmail(data);
     return { message: 'Email queued for sending' };
   }
@@ -46,11 +48,13 @@ export class EmailController {
   @Post('send-bulk')
   @Roles(Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER)
   @HttpCode(HttpStatus.ACCEPTED)
-  async sendBulkEmails(@Body() data: SendBulkEmailsDto): Promise<{ message: string; count: number }> {
+  async sendBulkEmails(
+    @Body() data: SendBulkEmailsDto,
+  ): Promise<{ message: string; count: number }> {
     await this.emailService.sendBulkEmails(data.emails);
-    return { 
+    return {
       message: 'Bulk emails queued for sending',
-      count: data.emails.length 
+      count: data.emails.length,
     };
   }
 
@@ -59,7 +63,9 @@ export class EmailController {
    */
   @Post('templates')
   @Roles(Role.ADMIN, Role.HIRING_MANAGER)
-  async createTemplate(@Body() data: CreateEmailTemplateDto): Promise<EmailTemplate> {
+  async createTemplate(
+    @Body() data: CreateEmailTemplateDto,
+  ): Promise<EmailTemplate> {
     return this.emailService.createTemplate(data);
   }
 
@@ -69,7 +75,7 @@ export class EmailController {
   @Get('templates')
   @Roles(Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER)
   async getTemplates(
-    @Query('type') type?: EmailTemplateType
+    @Query('type') type?: EmailTemplateType,
   ): Promise<EmailTemplate[]> {
     return this.emailService.getTemplates(type);
   }
@@ -94,7 +100,7 @@ export class EmailController {
   @Roles(Role.ADMIN, Role.HIRING_MANAGER)
   async updateTemplate(
     @Param('id') id: string,
-    @Body() data: UpdateEmailTemplateDto
+    @Body() data: UpdateEmailTemplateDto,
   ): Promise<EmailTemplate> {
     return this.emailService.updateTemplate(id, data);
   }
@@ -114,7 +120,9 @@ export class EmailController {
    */
   @Get('templates/:id/metrics')
   @Roles(Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER)
-  async getTemplateMetrics(@Param('id') id: string): Promise<EmailMetricsResponseDto> {
+  async getTemplateMetrics(
+    @Param('id') id: string,
+  ): Promise<EmailMetricsResponseDto> {
     return this.emailService.trackEmailMetrics(id);
   }
 
@@ -135,11 +143,11 @@ export class EmailController {
   async getEmailStatistics(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
-    @Query('templateId') templateId?: string
+    @Query('templateId') templateId?: string,
   ) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     return this.emailService.getEmailStatistics(start, end, templateId);
   }
 }

@@ -11,7 +11,12 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { ScoringService, JobRequirements, CandidateScore, CandidateRanking } from './scoring.service';
+import {
+  ScoringService,
+  JobRequirements,
+  CandidateScore,
+  CandidateRanking,
+} from './scoring.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -48,7 +53,7 @@ export class ScoringController {
   ): Promise<CandidateScore> {
     // Verify user has access to this job
     await this.verifyJobAccess(jobId, req.user.id, req.user.role);
-    
+
     return this.scoringService.calculateCandidateScore(candidateId, jobId);
   }
 
@@ -65,8 +70,11 @@ export class ScoringController {
     // Verify user has access to this job
     await this.verifyJobAccess(jobId, req.user.id, req.user.role);
 
-    const score = await this.scoringService.getScoreBreakdown(candidateId, jobId);
-    
+    const score = await this.scoringService.getScoreBreakdown(
+      candidateId,
+      jobId,
+    );
+
     if (!score) {
       // Calculate score if not exists
       return this.scoringService.calculateCandidateScore(candidateId, jobId);
@@ -89,7 +97,7 @@ export class ScoringController {
     await this.verifyJobAccess(jobId, req.user.id, req.user.role);
 
     const rankings = await this.scoringService.rankCandidates(jobId);
-    
+
     // Apply limit if specified
     if (limit) {
       const limitNum = parseInt(limit, 10);
@@ -141,9 +149,7 @@ export class ScoringController {
    */
   @Get('top-candidates')
   @Roles(Role.ADMIN)
-  async getTopCandidates(
-    @Query('limit') limit?: string,
-  ): Promise<any[]> {
+  async getTopCandidates(@Query('limit') limit?: string): Promise<any[]> {
     const limitNum = limit ? parseInt(limit, 10) : 10;
 
     const topScores = await this.prisma.candidateScore.findMany({
@@ -190,7 +196,7 @@ export class ScoringController {
       const candidate = await this.prisma.candidate.findUnique({
         where: { userId: req.user.id },
       });
-      
+
       if (!candidate || candidate.id !== candidateId) {
         throw new ForbiddenException('You can only view your own scores');
       }
@@ -218,7 +224,11 @@ export class ScoringController {
   /**
    * Verify user has access to a job
    */
-  private async verifyJobAccess(jobId: string, userId: string, userRole: Role): Promise<void> {
+  private async verifyJobAccess(
+    jobId: string,
+    userId: string,
+    userRole: Role,
+  ): Promise<void> {
     // Admins have access to all jobs
     if (userRole === Role.ADMIN) {
       return;

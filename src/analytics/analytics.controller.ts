@@ -12,7 +12,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { AnalyticsService, DateRange, MetricFilters } from './analytics.service';
+import {
+  AnalyticsService,
+  DateRange,
+  MetricFilters,
+} from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -49,7 +53,10 @@ export class AnalyticsController {
     const dateRange = this.buildDateRange(filters.startDate, filters.endDate);
     const metricFilters = this.buildMetricFilters(filters, req.user);
 
-    return this.analyticsService.getRecruitmentMetrics(dateRange, metricFilters);
+    return this.analyticsService.getRecruitmentMetrics(
+      dateRange,
+      metricFilters,
+    );
   }
 
   /**
@@ -162,7 +169,9 @@ export class AnalyticsController {
     const compareRange = this.buildDateRange(compareStartDate, compareEndDate);
 
     if (!currentRange || !compareRange) {
-      throw new ForbiddenException('All date parameters are required for comparison');
+      throw new ForbiddenException(
+        'All date parameters are required for comparison',
+      );
     }
 
     const [currentMetrics, compareMetrics] = await Promise.all([
@@ -210,7 +219,9 @@ export class AnalyticsController {
     @Res() res: Response,
   ): Promise<void> {
     const filters: MetricFilters = {
-      startDate: exportDto.startDate ? new Date(exportDto.startDate) : undefined,
+      startDate: exportDto.startDate
+        ? new Date(exportDto.startDate)
+        : undefined,
       endDate: exportDto.endDate ? new Date(exportDto.endDate) : undefined,
       jobId: exportDto.jobId,
       teamId: exportDto.teamId,
@@ -223,7 +234,8 @@ export class AnalyticsController {
 
     const contentTypes: Record<ExportFormat, string> = {
       [ExportFormat.CSV]: 'text/csv',
-      [ExportFormat.EXCEL]: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      [ExportFormat.EXCEL]:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       [ExportFormat.PDF]: 'application/pdf',
     };
 

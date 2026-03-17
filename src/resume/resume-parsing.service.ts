@@ -50,25 +50,111 @@ export class ResumeParsingService {
   // Common technical skills for matching
   private readonly technicalSkills = new Set([
     // Programming Languages
-    'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'ruby', 'go', 'rust', 'php', 'swift', 'kotlin', 'scala', 'r',
+    'javascript',
+    'typescript',
+    'python',
+    'java',
+    'c++',
+    'c#',
+    'ruby',
+    'go',
+    'rust',
+    'php',
+    'swift',
+    'kotlin',
+    'scala',
+    'r',
     // Frontend
-    'react', 'angular', 'vue', 'svelte', 'html', 'css', 'sass', 'less', 'tailwind', 'bootstrap', 'jquery', 'next.js', 'nuxt',
+    'react',
+    'angular',
+    'vue',
+    'svelte',
+    'html',
+    'css',
+    'sass',
+    'less',
+    'tailwind',
+    'bootstrap',
+    'jquery',
+    'next.js',
+    'nuxt',
     // Backend
-    'node.js', 'express', 'nestjs', 'django', 'flask', 'spring', 'rails', 'laravel', 'fastapi', '.net', 'asp.net',
+    'node.js',
+    'express',
+    'nestjs',
+    'django',
+    'flask',
+    'spring',
+    'rails',
+    'laravel',
+    'fastapi',
+    '.net',
+    'asp.net',
     // Databases
-    'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch', 'dynamodb', 'sqlite', 'oracle', 'sql server', 'cassandra',
+    'postgresql',
+    'mysql',
+    'mongodb',
+    'redis',
+    'elasticsearch',
+    'dynamodb',
+    'sqlite',
+    'oracle',
+    'sql server',
+    'cassandra',
     // Cloud & DevOps
-    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins', 'gitlab', 'github actions', 'circleci',
+    'aws',
+    'azure',
+    'gcp',
+    'docker',
+    'kubernetes',
+    'terraform',
+    'jenkins',
+    'gitlab',
+    'github actions',
+    'circleci',
     // Tools & Frameworks
-    'git', 'jira', 'confluence', 'figma', 'graphql', 'rest', 'grpc', 'kafka', 'rabbitmq', 'nginx', 'apache',
+    'git',
+    'jira',
+    'confluence',
+    'figma',
+    'graphql',
+    'rest',
+    'grpc',
+    'kafka',
+    'rabbitmq',
+    'nginx',
+    'apache',
     // Data & ML
-    'machine learning', 'deep learning', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'scikit-learn', 'spark', 'hadoop',
+    'machine learning',
+    'deep learning',
+    'tensorflow',
+    'pytorch',
+    'pandas',
+    'numpy',
+    'scikit-learn',
+    'spark',
+    'hadoop',
     // Mobile
-    'react native', 'flutter', 'ios', 'android', 'xamarin',
+    'react native',
+    'flutter',
+    'ios',
+    'android',
+    'xamarin',
     // Testing
-    'jest', 'mocha', 'cypress', 'selenium', 'junit', 'pytest',
+    'jest',
+    'mocha',
+    'cypress',
+    'selenium',
+    'junit',
+    'pytest',
     // Soft skills
-    'agile', 'scrum', 'leadership', 'communication', 'problem solving', 'teamwork', 'project management',
+    'agile',
+    'scrum',
+    'leadership',
+    'communication',
+    'problem solving',
+    'teamwork',
+    'project management',
   ]);
 
   // Degree patterns for education parsing
@@ -95,7 +181,7 @@ export class ResumeParsingService {
     try {
       // Check file extension
       const ext = path.extname(fileUrl).toLowerCase();
-      
+
       if (ext === '.pdf') {
         return this.extractFromPdf(fileUrl);
       } else if (ext === '.docx' || ext === '.doc') {
@@ -121,8 +207,10 @@ export class ResumeParsingService {
     // const dataBuffer = fs.readFileSync(fileUrl);
     // const data = await pdfParse(dataBuffer);
     // return data.text;
-    
-    this.logger.debug('PDF extraction placeholder - would use pdf-parse in production');
+
+    this.logger.debug(
+      'PDF extraction placeholder - would use pdf-parse in production',
+    );
     return this.getMockResumeText();
   }
 
@@ -135,8 +223,10 @@ export class ResumeParsingService {
     // const mammoth = require('mammoth');
     // const result = await mammoth.extractRawText({ path: fileUrl });
     // return result.value;
-    
-    this.logger.debug('DOCX extraction placeholder - would use mammoth in production');
+
+    this.logger.debug(
+      'DOCX extraction placeholder - would use mammoth in production',
+    );
     return this.getMockResumeText();
   }
 
@@ -164,7 +254,10 @@ export class ResumeParsingService {
     // Match against known technical skills
     for (const skill of this.technicalSkills) {
       // Create regex pattern that matches whole words
-      const pattern = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      const pattern = new RegExp(
+        `\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+        'i',
+      );
       if (pattern.test(normalizedText)) {
         // Capitalize properly
         foundSkills.push(this.capitalizeSkill(skill));
@@ -189,7 +282,7 @@ export class ResumeParsingService {
           const trimmed = skill.trim();
           if (trimmed.length > 1 && trimmed.length < 50) {
             const normalized = trimmed.toLowerCase();
-            if (!foundSkills.some(s => s.toLowerCase() === normalized)) {
+            if (!foundSkills.some((s) => s.toLowerCase() === normalized)) {
               foundSkills.push(trimmed);
             }
           }
@@ -206,7 +299,7 @@ export class ResumeParsingService {
    */
   parseExperience(text: string): ExperienceEntry[] {
     const experiences: ExperienceEntry[] = [];
-    
+
     // Common patterns for experience sections
     const experiencePatterns = [
       // Pattern: Title at Company (Date - Date)
@@ -225,24 +318,31 @@ export class ResumeParsingService {
           endDate: match[4]?.trim(),
           isCurrent: /present|current/i.test(match[4] || ''),
         };
-        
+
         // Calculate duration if dates are available
         if (entry.startDate && entry.endDate) {
-          entry.duration = this.calculateDuration(entry.startDate, entry.endDate);
+          entry.duration = this.calculateDuration(
+            entry.startDate,
+            entry.endDate,
+          );
         }
-        
+
         experiences.push(entry);
       }
     }
 
     // If no structured experience found, try to extract from experience section
     if (experiences.length === 0) {
-      const expSection = this.extractSection(text, ['experience', 'work history', 'employment']);
+      const expSection = this.extractSection(text, [
+        'experience',
+        'work history',
+        'employment',
+      ]);
       if (expSection) {
         // Simple extraction - split by common job title patterns
-        const lines = expSection.split('\n').filter(l => l.trim());
+        const lines = expSection.split('\n').filter((l) => l.trim());
         let currentEntry: Partial<ExperienceEntry> = {};
-        
+
         for (const line of lines) {
           if (this.looksLikeJobTitle(line)) {
             if (currentEntry.title) {
@@ -253,7 +353,7 @@ export class ResumeParsingService {
             currentEntry.company = line.trim();
           }
         }
-        
+
         if (currentEntry.title) {
           experiences.push(currentEntry as ExperienceEntry);
         }
@@ -268,9 +368,13 @@ export class ResumeParsingService {
    */
   parseEducation(text: string): EducationEntry[] {
     const education: EducationEntry[] = [];
-    
+
     // Extract education section
-    const eduSection = this.extractSection(text, ['education', 'academic', 'qualifications']);
+    const eduSection = this.extractSection(text, [
+      'education',
+      'academic',
+      'qualifications',
+    ]);
     const searchText = eduSection || text;
 
     // Pattern for degree + institution
@@ -289,13 +393,13 @@ export class ResumeParsingService {
           institution: match[2]?.trim() || match[1]?.trim() || 'Unknown',
           graduationYear: match[3]?.trim(),
         };
-        
+
         // Extract field of study if present
         const fieldMatch = entry.degree.match(/(?:in|of)\s+([A-Za-z\s]+)$/i);
         if (fieldMatch) {
           entry.field = fieldMatch[1].trim();
         }
-        
+
         education.push(entry);
       }
     }
@@ -323,44 +427,55 @@ export class ResumeParsingService {
     const contactInfo: ContactInfo = {};
 
     // Email pattern
-    const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+    const emailMatch = text.match(
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+    );
     if (emailMatch) {
       contactInfo.email = emailMatch[0];
     }
 
     // Phone pattern (various formats)
-    const phoneMatch = text.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+    const phoneMatch = text.match(
+      /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
+    );
     if (phoneMatch) {
       contactInfo.phone = phoneMatch[0];
     }
 
     // LinkedIn pattern
-    const linkedinMatch = text.match(/(?:linkedin\.com\/in\/|linkedin:?\s*)([a-zA-Z0-9-]+)/i);
+    const linkedinMatch = text.match(
+      /(?:linkedin\.com\/in\/|linkedin:?\s*)([a-zA-Z0-9-]+)/i,
+    );
     if (linkedinMatch) {
       contactInfo.linkedin = `linkedin.com/in/${linkedinMatch[1]}`;
     }
 
     // GitHub pattern
-    const githubMatch = text.match(/(?:github\.com\/|github:?\s*)([a-zA-Z0-9-]+)/i);
+    const githubMatch = text.match(
+      /(?:github\.com\/|github:?\s*)([a-zA-Z0-9-]+)/i,
+    );
     if (githubMatch) {
       contactInfo.github = `github.com/${githubMatch[1]}`;
     }
 
     // Website pattern
-    const websiteMatch = text.match(/(?:website|portfolio|blog)[:\s]+([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+    const websiteMatch = text.match(
+      /(?:website|portfolio|blog)[:\s]+([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+    );
     if (websiteMatch) {
       contactInfo.website = websiteMatch[1];
     }
 
     // Location pattern (City, State or City, Country)
-    const locationMatch = text.match(/\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)?),\s*([A-Z]{2}|[A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\b/);
+    const locationMatch = text.match(
+      /\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)?),\s*([A-Z]{2}|[A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\b/,
+    );
     if (locationMatch) {
       contactInfo.location = locationMatch[0];
     }
 
     return contactInfo;
   }
-
 
   /**
    * Full resume parsing - combines all parsing methods
@@ -401,7 +516,9 @@ export class ResumeParsingService {
       totalYearsExperience,
     };
 
-    this.logger.log(`Resume parsed successfully. Found ${skills.length} skills, ${experience.length} experience entries, ${education.length} education entries`);
+    this.logger.log(
+      `Resume parsed successfully. Found ${skills.length} skills, ${experience.length} experience entries, ${education.length} education entries`,
+    );
 
     return parsedData;
   }
@@ -409,7 +526,10 @@ export class ResumeParsingService {
   /**
    * Parse resume and store results in database
    */
-  async parseAndStoreResume(candidateId: string, fileUrl: string): Promise<ParsedResumeData> {
+  async parseAndStoreResume(
+    candidateId: string,
+    fileUrl: string,
+  ): Promise<ParsedResumeData> {
     const parsedData = await this.parseResume(fileUrl);
 
     // Store parsed data in database
@@ -417,16 +537,24 @@ export class ResumeParsingService {
       where: { candidateId },
       update: {
         skills: parsedData.skills,
-        education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
-        experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
+        education: parsedData.education
+          .map((e) => `${e.degree} - ${e.institution}`)
+          .join('; '),
+        experience: parsedData.experience
+          .map((e) => `${e.title} at ${e.company}`)
+          .join('; '),
         rawText: parsedData.rawText,
         parsedAt: new Date(),
       },
       create: {
         candidateId,
         skills: parsedData.skills,
-        education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
-        experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
+        education: parsedData.education
+          .map((e) => `${e.degree} - ${e.institution}`)
+          .join('; '),
+        experience: parsedData.experience
+          .map((e) => `${e.title} at ${e.company}`)
+          .join('; '),
         rawText: parsedData.rawText,
       },
     });
@@ -436,8 +564,12 @@ export class ResumeParsingService {
       where: { id: candidateId },
       data: {
         skills: parsedData.skills,
-        education: parsedData.education.map(e => `${e.degree} - ${e.institution}`).join('; '),
-        experience: parsedData.experience.map(e => `${e.title} at ${e.company}`).join('; '),
+        education: parsedData.education
+          .map((e) => `${e.degree} - ${e.institution}`)
+          .join('; '),
+        experience: parsedData.experience
+          .map((e) => `${e.title} at ${e.company}`)
+          .join('; '),
       },
     });
 
@@ -458,7 +590,10 @@ export class ResumeParsingService {
         this.logger.log('Using AI service for enhanced resume parsing');
         return await this.callAIParsingService(fileUrl, aiServiceUrl, aiApiKey);
       } catch (error) {
-        this.logger.warn('AI parsing failed, falling back to rule-based parsing', error);
+        this.logger.warn(
+          'AI parsing failed, falling back to rule-based parsing',
+          error,
+        );
       }
     }
 
@@ -495,7 +630,9 @@ export class ResumeParsingService {
     //   })
     // });
 
-    this.logger.debug('AI service call placeholder - would call external API in production');
+    this.logger.debug(
+      'AI service call placeholder - would call external API in production',
+    );
     return this.parseResume(fileUrl);
   }
 
@@ -503,7 +640,12 @@ export class ResumeParsingService {
    * Extract summary/objective section from resume
    */
   private extractSummary(text: string): string | undefined {
-    const summarySection = this.extractSection(text, ['summary', 'objective', 'profile', 'about']);
+    const summarySection = this.extractSection(text, [
+      'summary',
+      'objective',
+      'profile',
+      'about',
+    ]);
     if (summarySection) {
       // Take first 500 characters
       return summarySection.substring(0, 500).trim();
@@ -516,10 +658,14 @@ export class ResumeParsingService {
    */
   private extractCertifications(text: string): string[] {
     const certifications: string[] = [];
-    const certSection = this.extractSection(text, ['certifications', 'certificates', 'credentials']);
-    
+    const certSection = this.extractSection(text, [
+      'certifications',
+      'certificates',
+      'credentials',
+    ]);
+
     if (certSection) {
-      const lines = certSection.split('\n').filter(l => l.trim());
+      const lines = certSection.split('\n').filter((l) => l.trim());
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed.length > 3 && trimmed.length < 100) {
@@ -555,11 +701,26 @@ export class ResumeParsingService {
    */
   private extractLanguages(text: string): string[] {
     const languages: string[] = [];
-    const langSection = this.extractSection(text, ['languages', 'language skills']);
-    
+    const langSection = this.extractSection(text, [
+      'languages',
+      'language skills',
+    ]);
+
     const commonLanguages = [
-      'english', 'spanish', 'french', 'german', 'chinese', 'mandarin', 'japanese',
-      'korean', 'portuguese', 'italian', 'russian', 'arabic', 'hindi', 'dutch',
+      'english',
+      'spanish',
+      'french',
+      'german',
+      'chinese',
+      'mandarin',
+      'japanese',
+      'korean',
+      'portuguese',
+      'italian',
+      'russian',
+      'arabic',
+      'hindi',
+      'dutch',
     ];
 
     const searchText = langSection || text;
@@ -582,8 +743,10 @@ export class ResumeParsingService {
     for (const exp of experiences) {
       if (exp.startDate && exp.endDate) {
         const startYear = this.extractYear(exp.startDate);
-        const endYear = exp.isCurrent ? new Date().getFullYear() : this.extractYear(exp.endDate);
-        
+        const endYear = exp.isCurrent
+          ? new Date().getFullYear()
+          : this.extractYear(exp.endDate);
+
         if (startYear && endYear) {
           totalMonths += (endYear - startYear) * 12;
         }
@@ -599,9 +762,12 @@ export class ResumeParsingService {
   private extractSection(text: string, headers: string[]): string | null {
     const lines = text.split('\n');
     let inSection = false;
-    let sectionContent: string[] = [];
+    const sectionContent: string[] = [];
 
-    const headerPattern = new RegExp(`^\\s*(${headers.join('|')})\\s*:?\\s*$`, 'i');
+    const headerPattern = new RegExp(
+      `^\\s*(${headers.join('|')})\\s*:?\\s*$`,
+      'i',
+    );
     const nextSectionPattern = /^[A-Z][A-Za-z\s]+:?\s*$/;
 
     for (const line of lines) {
@@ -626,13 +792,27 @@ export class ResumeParsingService {
    */
   private looksLikeJobTitle(line: string): boolean {
     const titleKeywords = [
-      'engineer', 'developer', 'manager', 'analyst', 'designer', 'lead',
-      'director', 'architect', 'consultant', 'specialist', 'coordinator',
-      'administrator', 'intern', 'associate', 'senior', 'junior', 'staff',
+      'engineer',
+      'developer',
+      'manager',
+      'analyst',
+      'designer',
+      'lead',
+      'director',
+      'architect',
+      'consultant',
+      'specialist',
+      'coordinator',
+      'administrator',
+      'intern',
+      'associate',
+      'senior',
+      'junior',
+      'staff',
     ];
-    
+
     const lowerLine = line.toLowerCase();
-    return titleKeywords.some(keyword => lowerLine.includes(keyword));
+    return titleKeywords.some((keyword) => lowerLine.includes(keyword));
   }
 
   /**
@@ -640,8 +820,8 @@ export class ResumeParsingService {
    */
   private calculateDuration(startDate: string, endDate: string): string {
     const startYear = this.extractYear(startDate);
-    const endYear = endDate.toLowerCase().includes('present') 
-      ? new Date().getFullYear() 
+    const endYear = endDate.toLowerCase().includes('present')
+      ? new Date().getFullYear()
       : this.extractYear(endDate);
 
     if (startYear && endYear) {
@@ -668,35 +848,40 @@ export class ResumeParsingService {
   private capitalizeSkill(skill: string): string {
     // Special cases for acronyms and specific capitalizations
     const specialCases: Record<string, string> = {
-      'javascript': 'JavaScript',
-      'typescript': 'TypeScript',
+      javascript: 'JavaScript',
+      typescript: 'TypeScript',
       'node.js': 'Node.js',
       'next.js': 'Next.js',
       'react native': 'React Native',
-      'vue': 'Vue.js',
-      'aws': 'AWS',
-      'gcp': 'GCP',
-      'sql': 'SQL',
-      'nosql': 'NoSQL',
-      'graphql': 'GraphQL',
-      'rest': 'REST',
-      'grpc': 'gRPC',
-      'html': 'HTML',
-      'css': 'CSS',
-      'sass': 'SASS',
-      'less': 'LESS',
-      'php': 'PHP',
+      vue: 'Vue.js',
+      aws: 'AWS',
+      gcp: 'GCP',
+      sql: 'SQL',
+      nosql: 'NoSQL',
+      graphql: 'GraphQL',
+      rest: 'REST',
+      grpc: 'gRPC',
+      html: 'HTML',
+      css: 'CSS',
+      sass: 'SASS',
+      less: 'LESS',
+      php: 'PHP',
       'c++': 'C++',
       'c#': 'C#',
       '.net': '.NET',
       'asp.net': 'ASP.NET',
-      'ios': 'iOS',
-      'api': 'API',
+      ios: 'iOS',
+      api: 'API',
       'ci/cd': 'CI/CD',
     };
 
-    return specialCases[skill.toLowerCase()] || 
-      skill.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    return (
+      specialCases[skill.toLowerCase()] ||
+      skill
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    );
   }
 
   /**

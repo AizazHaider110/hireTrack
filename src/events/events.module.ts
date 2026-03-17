@@ -8,6 +8,6 @@ import { WorkersService } from './workers.service';
 @Module({
   imports: [ConfigModule],
   providers: [EventBusService, QueueService, WorkersService],
-  exports: [EventBusService, QueueService],
+  exports: [EventBusService, QueueService, WorkersService],
 })
 export class EventsModule {}

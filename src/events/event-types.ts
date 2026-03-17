@@ -62,6 +62,7 @@ export enum QueueName {
   WEBHOOKS = 'webhooks',
   ANALYTICS = 'analytics',
   AI_SCORING = 'ai-scoring',
+  WORKFLOW = 'workflow',
 }
 
 /**
@@ -92,4 +93,8 @@ export enum JobName {
   // AI scoring jobs
   SCORE_CANDIDATE = 'score-candidate',
   MATCH_CANDIDATES = 'match-candidates',
+
+  // Workflow jobs
+  EXECUTE_WORKFLOW = 'execute-workflow',
+  EXECUTE_WORKFLOW_ACTION = 'execute-workflow-action',
 }

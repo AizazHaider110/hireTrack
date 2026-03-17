@@ -2,7 +2,10 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventBusService } from '../events/event-bus.service';
 import { SystemEventType } from '../events/event-types';
-import { ResumeParsingService, ParsedResumeData } from '../resume/resume-parsing.service';
+import {
+  ResumeParsingService,
+  ParsedResumeData,
+} from '../resume/resume-parsing.service';
 
 export interface ScoreBreakdown {
   skillsScore: number;
@@ -53,20 +56,20 @@ export interface JobRequirements {
 
 // Scoring weights configuration
 const SCORING_WEIGHTS = {
-  skills: 0.45,        // 45% weight for skills match
-  experience: 0.35,    // 35% weight for experience
-  education: 0.15,     // 15% weight for education
-  bonus: 0.05,         // 5% for bonus points (certifications, keywords, etc.)
+  skills: 0.45, // 45% weight for skills match
+  experience: 0.35, // 35% weight for experience
+  education: 0.15, // 15% weight for education
+  bonus: 0.05, // 5% for bonus points (certifications, keywords, etc.)
 };
 
 // Education level hierarchy for scoring
 const EDUCATION_LEVELS: Record<string, number> = {
   'high school': 1,
-  'associate': 2,
-  'bachelor': 3,
-  'master': 4,
-  'phd': 5,
-  'doctorate': 5,
+  associate: 2,
+  bachelor: 3,
+  master: 4,
+  phd: 5,
+  doctorate: 5,
 };
 
 @Injectable()
@@ -94,18 +97,28 @@ export class ScoringService {
     });
 
     // Calculate score when new application is received
-    this.eventBus.subscribe(SystemEventType.CANDIDATE_APPLIED, async (event) => {
-      const { candidateId, jobId } = event.payload;
-      this.logger.log(`New application, calculating score for candidate: ${candidateId}`);
-      await this.calculateCandidateScore(candidateId, jobId);
-    });
+    this.eventBus.subscribe(
+      SystemEventType.CANDIDATE_APPLIED,
+      async (event) => {
+        const { candidateId, jobId } = event.payload;
+        this.logger.log(
+          `New application, calculating score for candidate: ${candidateId}`,
+        );
+        await this.calculateCandidateScore(candidateId, jobId);
+      },
+    );
   }
 
   /**
    * Calculate score for a candidate-job pair
    */
-  async calculateCandidateScore(candidateId: string, jobId: string): Promise<CandidateScore> {
-    this.logger.log(`Calculating score for candidate ${candidateId} and job ${jobId}`);
+  async calculateCandidateScore(
+    candidateId: string,
+    jobId: string,
+  ): Promise<CandidateScore> {
+    this.logger.log(
+      `Calculating score for candidate ${candidateId} and job ${jobId}`,
+    );
 
     // Get candidate data
     const candidate = await this.prisma.candidate.findUnique({
@@ -136,9 +149,14 @@ export class ScoringService {
     let parsedResume: ParsedResumeData | null = null;
     if (candidate.resumeUrl) {
       try {
-        parsedResume = await this.resumeParsingService.parseResume(candidate.resumeUrl);
+        parsedResume = await this.resumeParsingService.parseResume(
+          candidate.resumeUrl,
+        );
       } catch (error) {
-        this.logger.warn(`Failed to parse resume for candidate ${candidateId}`, error);
+        this.logger.warn(
+          `Failed to parse resume for candidate ${candidateId}`,
+          error,
+        );
       }
     }
 
@@ -150,7 +168,8 @@ export class ScoringService {
     );
 
     const experienceResult = this.calculateExperienceScore(
-      parsedResume?.totalYearsExperience || this.estimateExperience(candidate.experience),
+      parsedResume?.totalYearsExperience ||
+        this.estimateExperience(candidate.experience),
       requirements.minimumExperienceYears,
       requirements.preferredExperienceYears,
     );
@@ -170,9 +189,9 @@ export class ScoringService {
     // Calculate weighted overall score
     const overallScore = Math.round(
       skillsResult.score * SCORING_WEIGHTS.skills +
-      experienceResult.score * SCORING_WEIGHTS.experience +
-      educationResult.score * SCORING_WEIGHTS.education +
-      bonusResult.score * SCORING_WEIGHTS.bonus
+        experienceResult.score * SCORING_WEIGHTS.experience +
+        educationResult.score * SCORING_WEIGHTS.education +
+        bonusResult.score * SCORING_WEIGHTS.bonus,
     );
 
     const breakdown: ScoreBreakdown = {
@@ -222,7 +241,9 @@ export class ScoringService {
       overallScore,
     });
 
-    this.logger.log(`Score calculated for candidate ${candidateId}: ${overallScore}`);
+    this.logger.log(
+      `Score calculated for candidate ${candidateId}: ${overallScore}`,
+    );
 
     return {
       candidateId,
@@ -239,7 +260,10 @@ export class ScoringService {
   /**
    * Get score breakdown for a candidate-job pair
    */
-  async getScoreBreakdown(candidateId: string, jobId: string): Promise<CandidateScore | null> {
+  async getScoreBreakdown(
+    candidateId: string,
+    jobId: string,
+  ): Promise<CandidateScore | null> {
     const score = await this.prisma.candidateScore.findUnique({
       where: {
         candidateId_jobId: {
@@ -349,7 +373,6 @@ export class ScoringService {
     return rankings;
   }
 
-
   /**
    * Recalculate scores for all candidates of a job
    */
@@ -365,17 +388,25 @@ export class ScoringService {
       try {
         await this.calculateCandidateScore(app.candidateId, jobId);
       } catch (error) {
-        this.logger.error(`Failed to recalculate score for candidate ${app.candidateId}`, error);
+        this.logger.error(
+          `Failed to recalculate score for candidate ${app.candidateId}`,
+          error,
+        );
       }
     }
 
-    this.logger.log(`Recalculated scores for ${applications.length} candidates`);
+    this.logger.log(
+      `Recalculated scores for ${applications.length} candidates`,
+    );
   }
 
   /**
    * Update job requirements and trigger score recalculation
    */
-  async updateJobRequirements(jobId: string, requirements: Partial<JobRequirements>): Promise<void> {
+  async updateJobRequirements(
+    jobId: string,
+    requirements: Partial<JobRequirements>,
+  ): Promise<void> {
     const job = await this.prisma.jobPosting.findUnique({
       where: { id: jobId },
     });
@@ -405,9 +436,15 @@ export class ScoringService {
     requiredSkills: string[],
     preferredSkills: string[],
   ): { score: number; matched: string[]; missing: string[] } {
-    const normalizedCandidateSkills = candidateSkills.map(s => s.toLowerCase().trim());
-    const normalizedRequired = requiredSkills.map(s => s.toLowerCase().trim());
-    const normalizedPreferred = preferredSkills.map(s => s.toLowerCase().trim());
+    const normalizedCandidateSkills = candidateSkills.map((s) =>
+      s.toLowerCase().trim(),
+    );
+    const normalizedRequired = requiredSkills.map((s) =>
+      s.toLowerCase().trim(),
+    );
+    const normalizedPreferred = preferredSkills.map((s) =>
+      s.toLowerCase().trim(),
+    );
 
     // Find matched and missing required skills
     const matchedRequired: string[] = [];
@@ -435,14 +472,16 @@ export class ScoringService {
     let score = 0;
 
     if (normalizedRequired.length > 0) {
-      const requiredScore = (matchedRequired.length / normalizedRequired.length) * 80;
+      const requiredScore =
+        (matchedRequired.length / normalizedRequired.length) * 80;
       score += requiredScore;
     } else {
       score += 80; // Full score if no required skills specified
     }
 
     if (normalizedPreferred.length > 0) {
-      const preferredScore = (matchedPreferred.length / normalizedPreferred.length) * 20;
+      const preferredScore =
+        (matchedPreferred.length / normalizedPreferred.length) * 20;
       score += preferredScore;
     } else {
       score += 20; // Full score if no preferred skills specified
@@ -466,19 +505,19 @@ export class ScoringService {
 
     // Fuzzy matching for common variations
     const skillVariations: Record<string, string[]> = {
-      'javascript': ['js', 'ecmascript'],
-      'typescript': ['ts'],
-      'python': ['py'],
-      'postgresql': ['postgres', 'psql'],
-      'mongodb': ['mongo'],
-      'kubernetes': ['k8s'],
-      'react': ['reactjs', 'react.js'],
-      'node': ['nodejs', 'node.js'],
-      'vue': ['vuejs', 'vue.js'],
-      'angular': ['angularjs'],
-      'aws': ['amazon web services'],
-      'gcp': ['google cloud', 'google cloud platform'],
-      'azure': ['microsoft azure'],
+      javascript: ['js', 'ecmascript'],
+      typescript: ['ts'],
+      python: ['py'],
+      postgresql: ['postgres', 'psql'],
+      mongodb: ['mongo'],
+      kubernetes: ['k8s'],
+      react: ['reactjs', 'react.js'],
+      node: ['nodejs', 'node.js'],
+      vue: ['vuejs', 'vue.js'],
+      angular: ['angularjs'],
+      aws: ['amazon web services'],
+      gcp: ['google cloud', 'google cloud platform'],
+      azure: ['microsoft azure'],
     };
 
     // Check variations
@@ -521,8 +560,13 @@ export class ScoringService {
       // Score between 70-100 based on how close to preferred
       const baseScore = 70;
       if (preferredYears && preferredYears > minimumYears) {
-        const additionalScore = ((candidateYears - minimumYears) / (preferredYears - minimumYears)) * 30;
-        return { score: Math.round(baseScore + additionalScore), years: candidateYears };
+        const additionalScore =
+          ((candidateYears - minimumYears) / (preferredYears - minimumYears)) *
+          30;
+        return {
+          score: Math.round(baseScore + additionalScore),
+          years: candidateYears,
+        };
       }
       return { score: 85, years: candidateYears };
     }
@@ -542,31 +586,51 @@ export class ScoringService {
     preferredEducation?: string,
   ): { score: number; match: string } {
     // Get highest education level from candidate
-    const candidateLevel = this.getHighestEducationLevel(candidateEducation, parsedEducation);
-    
+    const candidateLevel = this.getHighestEducationLevel(
+      candidateEducation,
+      parsedEducation,
+    );
+
     // If no education requirement, give full score
     if (!requiredEducation && !preferredEducation) {
       return { score: 100, match: candidateLevel.degree || 'Not specified' };
     }
 
-    const requiredLevel = requiredEducation ? this.parseEducationLevel(requiredEducation) : 0;
-    const preferredLevel = preferredEducation ? this.parseEducationLevel(preferredEducation) : requiredLevel;
+    const requiredLevel = requiredEducation
+      ? this.parseEducationLevel(requiredEducation)
+      : 0;
+    const preferredLevel = preferredEducation
+      ? this.parseEducationLevel(preferredEducation)
+      : requiredLevel;
 
     // If candidate meets or exceeds preferred level
     if (candidateLevel.level >= preferredLevel) {
-      return { score: 100, match: candidateLevel.degree || 'Exceeds requirements' };
+      return {
+        score: 100,
+        match: candidateLevel.degree || 'Exceeds requirements',
+      };
     }
 
     // If candidate meets required level
     if (candidateLevel.level >= requiredLevel) {
-      const score = 70 + ((candidateLevel.level - requiredLevel) / (preferredLevel - requiredLevel)) * 30;
-      return { score: Math.round(score), match: candidateLevel.degree || 'Meets requirements' };
+      const score =
+        70 +
+        ((candidateLevel.level - requiredLevel) /
+          (preferredLevel - requiredLevel)) *
+          30;
+      return {
+        score: Math.round(score),
+        match: candidateLevel.degree || 'Meets requirements',
+      };
     }
 
     // Below required level
     if (requiredLevel > 0) {
       const score = (candidateLevel.level / requiredLevel) * 70;
-      return { score: Math.round(score), match: candidateLevel.degree || 'Below requirements' };
+      return {
+        score: Math.round(score),
+        match: candidateLevel.degree || 'Below requirements',
+      };
     }
 
     return { score: 50, match: candidateLevel.degree || 'Unknown' };
@@ -607,13 +671,26 @@ export class ScoringService {
   private parseEducationLevel(education: string): number {
     const lowerEdu = education.toLowerCase();
 
-    if (lowerEdu.includes('phd') || lowerEdu.includes('doctorate') || lowerEdu.includes('ph.d')) {
+    if (
+      lowerEdu.includes('phd') ||
+      lowerEdu.includes('doctorate') ||
+      lowerEdu.includes('ph.d')
+    ) {
       return EDUCATION_LEVELS['phd'];
     }
-    if (lowerEdu.includes('master') || lowerEdu.includes('m.s') || lowerEdu.includes('m.a') || lowerEdu.includes('mba')) {
+    if (
+      lowerEdu.includes('master') ||
+      lowerEdu.includes('m.s') ||
+      lowerEdu.includes('m.a') ||
+      lowerEdu.includes('mba')
+    ) {
       return EDUCATION_LEVELS['master'];
     }
-    if (lowerEdu.includes('bachelor') || lowerEdu.includes('b.s') || lowerEdu.includes('b.a')) {
+    if (
+      lowerEdu.includes('bachelor') ||
+      lowerEdu.includes('b.s') ||
+      lowerEdu.includes('b.a')
+    ) {
       return EDUCATION_LEVELS['bachelor'];
     }
     if (lowerEdu.includes('associate')) {
@@ -650,9 +727,14 @@ export class ScoringService {
     // Bonus for keyword matches
     if (keywords.length > 0 && parsedResume.rawText) {
       const lowerText = parsedResume.rawText.toLowerCase();
-      const matchedKeywords = keywords.filter(k => lowerText.includes(k.toLowerCase()));
+      const matchedKeywords = keywords.filter((k) =>
+        lowerText.includes(k.toLowerCase()),
+      );
       if (matchedKeywords.length > 0) {
-        const keywordBonus = Math.min((matchedKeywords.length / keywords.length) * 30, 30);
+        const keywordBonus = Math.min(
+          (matchedKeywords.length / keywords.length) * 30,
+          30,
+        );
         score += keywordBonus;
         reasons.push(`${matchedKeywords.length} keyword match(es)`);
       }
@@ -665,7 +747,10 @@ export class ScoringService {
     }
 
     // Bonus for extensive experience
-    if (parsedResume.totalYearsExperience && parsedResume.totalYearsExperience >= 10) {
+    if (
+      parsedResume.totalYearsExperience &&
+      parsedResume.totalYearsExperience >= 10
+    ) {
       score += 20;
       reasons.push('Senior-level experience');
     }
@@ -677,16 +762,21 @@ export class ScoringService {
   /**
    * Extract job requirements from job posting
    */
-  private extractJobRequirements(job: { requirements: string[]; description: string }): JobRequirements {
+  private extractJobRequirements(job: {
+    requirements: string[];
+    description: string;
+  }): JobRequirements {
     // Parse requirements from job posting
     const requiredSkills = job.requirements || [];
-    
+
     // Extract additional requirements from description
     const description = job.description.toLowerCase();
-    
+
     // Try to extract experience requirement
     let minimumExperienceYears = 0;
-    const expMatch = description.match(/(\d+)\+?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience|exp)/i);
+    const expMatch = description.match(
+      /(\d+)\+?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience|exp)/i,
+    );
     if (expMatch) {
       minimumExperienceYears = parseInt(expMatch[1], 10);
     }
@@ -697,7 +787,10 @@ export class ScoringService {
       requiredEducation = 'PhD';
     } else if (description.includes('master')) {
       requiredEducation = 'Master';
-    } else if (description.includes('bachelor') || description.includes('degree')) {
+    } else if (
+      description.includes('bachelor') ||
+      description.includes('degree')
+    ) {
       requiredEducation = 'Bachelor';
     }
 
@@ -718,12 +811,23 @@ export class ScoringService {
    */
   private extractKeywords(description: string): string[] {
     const keywords: string[] = [];
-    
+
     // Common important keywords
     const importantTerms = [
-      'leadership', 'management', 'agile', 'scrum', 'remote', 'hybrid',
-      'startup', 'enterprise', 'scale', 'growth', 'innovation',
-      'collaboration', 'communication', 'problem-solving',
+      'leadership',
+      'management',
+      'agile',
+      'scrum',
+      'remote',
+      'hybrid',
+      'startup',
+      'enterprise',
+      'scale',
+      'growth',
+      'innovation',
+      'collaboration',
+      'communication',
+      'problem-solving',
     ];
 
     const lowerDesc = description.toLowerCase();

@@ -105,7 +105,7 @@ describe('EmailService', () => {
           templateId: mockTemplate.id,
           name: mockTemplate.name,
           type: mockTemplate.type,
-        }
+        },
       );
     });
   });
@@ -161,14 +161,11 @@ describe('EmailService', () => {
       });
 
       expect(mockQueueService.addJob).toHaveBeenCalled();
-      expect(mockEventBusService.publish).toHaveBeenCalledWith(
-        'email.queued',
-        {
-          emailJobId: 'job-1',
-          templateType: EmailTemplateType.APPLICATION_RECEIVED,
-          recipient: 'test@example.com',
-        }
-      );
+      expect(mockEventBusService.publish).toHaveBeenCalledWith('email.queued', {
+        emailJobId: 'job-1',
+        templateType: EmailTemplateType.APPLICATION_RECEIVED,
+        recipient: 'test@example.com',
+      });
     });
   });
 });

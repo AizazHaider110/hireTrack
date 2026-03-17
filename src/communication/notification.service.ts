@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../events/queue.service';
 import { EventBusService } from '../events/event-bus.service';
@@ -14,13 +19,13 @@ import {
   BulkNotificationDto,
   WebhookTestDto,
 } from '../common/dto/notification.dto';
-import { 
-  Webhook, 
-  WebhookEvent, 
-  WebhookDelivery, 
-  DeliveryStatus, 
+import {
+  Webhook,
+  WebhookEvent,
+  WebhookDelivery,
+  DeliveryStatus,
   ApplicationStatus,
-  EmailTemplateType 
+  EmailTemplateType,
 } from '@prisma/client';
 import * as crypto from 'crypto';
 
@@ -40,7 +45,9 @@ export class NotificationService {
   /**
    * Send application status update notification
    */
-  async sendApplicationStatusUpdate(data: ApplicationStatusUpdateDto): Promise<void> {
+  async sendApplicationStatusUpdate(
+    data: ApplicationStatusUpdateDto,
+  ): Promise<void> {
     const application = await this.prisma.application.findUnique({
       where: { id: data.applicationId },
       include: {
@@ -54,7 +61,9 @@ export class NotificationService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Application with ID ${data.applicationId} not found`);
+      throw new NotFoundException(
+        `Application with ID ${data.applicationId} not found`,
+      );
     }
 
     // Determine email template type based on status
@@ -99,7 +108,9 @@ export class NotificationService {
       timestamp: new Date().toISOString(),
     });
 
-    this.logger.log(`Sent application status update for ${application.id}: ${data.status}`);
+    this.logger.log(
+      `Sent application status update for ${application.id}: ${data.status}`,
+    );
   }
 
   /**
@@ -119,7 +130,9 @@ export class NotificationService {
     });
 
     if (!interview) {
-      throw new NotFoundException(`Interview with ID ${data.interviewId} not found`);
+      throw new NotFoundException(
+        `Interview with ID ${data.interviewId} not found`,
+      );
     }
 
     // Send reminder to candidate
@@ -183,7 +196,7 @@ export class NotificationService {
           type: 'exponential',
           delay: 2000,
         },
-      }
+      },
     );
 
     this.logger.log(`Queued ${data.notifications.length} bulk notifications`);
@@ -192,7 +205,10 @@ export class NotificationService {
   /**
    * Create webhook subscription
    */
-  async subscribeToWebhook(data: CreateWebhookDto, createdBy: string): Promise<Webhook> {
+  async subscribeToWebhook(
+    data: CreateWebhookDto,
+    createdBy: string,
+  ): Promise<Webhook> {
     const secret = data.secret || this.generateWebhookSecret();
 
     const webhook = await this.prisma.webhook.create({
@@ -323,7 +339,9 @@ export class NotificationService {
   async testWebhook(data: WebhookTestDto): Promise<void> {
     const webhook = await this.getWebhookById(data.webhookId);
     if (!webhook) {
-      throw new NotFoundException(`Webhook with ID ${data.webhookId} not found`);
+      throw new NotFoundException(
+        `Webhook with ID ${data.webhookId} not found`,
+      );
     }
 
     const testPayload = data.testPayload || {
@@ -334,13 +352,21 @@ export class NotificationService {
       },
     };
 
-    await this.deliverWebhook(data.webhookId, WebhookEvent.CANDIDATE_APPLIED, testPayload);
+    await this.deliverWebhook(
+      data.webhookId,
+      WebhookEvent.CANDIDATE_APPLIED,
+      testPayload,
+    );
   }
 
   /**
    * Deliver webhook
    */
-  async deliverWebhook(webhookId: string, event: WebhookEvent, payload: any): Promise<void> {
+  async deliverWebhook(
+    webhookId: string,
+    event: WebhookEvent,
+    payload: any,
+  ): Promise<void> {
     const webhook = await this.prisma.webhook.findUnique({
       where: { id: webhookId },
     });
@@ -351,7 +377,9 @@ export class NotificationService {
     }
 
     if (!webhook.events.includes(event)) {
-      this.logger.debug(`Webhook ${webhookId} not subscribed to event ${event}`);
+      this.logger.debug(
+        `Webhook ${webhookId} not subscribed to event ${event}`,
+      );
       return;
     }
 
@@ -385,10 +413,12 @@ export class NotificationService {
           type: 'exponential',
           delay: 1000,
         },
-      }
+      },
     );
 
-    this.logger.debug(`Queued webhook delivery ${delivery.id} for ${webhook.url}`);
+    this.logger.debug(
+      `Queued webhook delivery ${delivery.id} for ${webhook.url}`,
+    );
   }
 
   /**
@@ -399,7 +429,7 @@ export class NotificationService {
     status: DeliveryStatus,
     responseCode?: number,
     responseBody?: string,
-    error?: string
+    error?: string,
   ): Promise<void> {
     const updateData: any = {
       status,
@@ -423,7 +453,7 @@ export class NotificationService {
       const delivery = await this.prisma.webhookDelivery.findUnique({
         where: { id: deliveryId },
       });
-      
+
       if (delivery && delivery.attempts < 5) {
         const delay = baseDelay * Math.pow(2, delivery.attempts);
         updateData.nextRetryAt = new Date(Date.now() + delay);
@@ -436,7 +466,9 @@ export class NotificationService {
       data: updateData,
     });
 
-    this.logger.debug(`Updated webhook delivery ${deliveryId} status to ${status}`);
+    this.logger.debug(
+      `Updated webhook delivery ${deliveryId} status to ${status}`,
+    );
   }
 
   /**
@@ -472,10 +504,11 @@ export class NotificationService {
         }
         return acc;
       },
-      { total: 0, delivered: 0, failed: 0, pending: 0 }
+      { total: 0, delivered: 0, failed: 0, pending: 0 },
     );
 
-    const successRate = stats.total > 0 ? (stats.delivered / stats.total) * 100 : 0;
+    const successRate =
+      stats.total > 0 ? (stats.delivered / stats.total) * 100 : 0;
 
     return {
       ...stats,
@@ -487,7 +520,10 @@ export class NotificationService {
   /**
    * Trigger webhooks for an event
    */
-  private async triggerWebhooks(event: WebhookEvent, payload: any): Promise<void> {
+  private async triggerWebhooks(
+    event: WebhookEvent,
+    payload: any,
+  ): Promise<void> {
     const webhooks = await this.prisma.webhook.findMany({
       where: {
         isActive: true,
@@ -519,16 +555,25 @@ export class NotificationService {
     });
 
     this.eventBus.subscribe('candidate.stage_changed', async (event) => {
-      await this.triggerWebhooks(WebhookEvent.CANDIDATE_STAGE_CHANGED, event.payload);
+      await this.triggerWebhooks(
+        WebhookEvent.CANDIDATE_STAGE_CHANGED,
+        event.payload,
+      );
     });
 
     // Listen for interview events
     this.eventBus.subscribe('interview.scheduled', async (event) => {
-      await this.triggerWebhooks(WebhookEvent.INTERVIEW_SCHEDULED, event.payload);
+      await this.triggerWebhooks(
+        WebhookEvent.INTERVIEW_SCHEDULED,
+        event.payload,
+      );
     });
 
     this.eventBus.subscribe('interview.completed', async (event) => {
-      await this.triggerWebhooks(WebhookEvent.INTERVIEW_COMPLETED, event.payload);
+      await this.triggerWebhooks(
+        WebhookEvent.INTERVIEW_COMPLETED,
+        event.payload,
+      );
     });
 
     // Listen for offer events
@@ -542,7 +587,10 @@ export class NotificationService {
 
     // Listen for candidate events
     this.eventBus.subscribe('candidate.rejected', async (event) => {
-      await this.triggerWebhooks(WebhookEvent.CANDIDATE_REJECTED, event.payload);
+      await this.triggerWebhooks(
+        WebhookEvent.CANDIDATE_REJECTED,
+        event.payload,
+      );
     });
 
     this.logger.log('Notification event listeners setup complete');

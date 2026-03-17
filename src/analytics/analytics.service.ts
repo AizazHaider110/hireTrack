@@ -67,7 +67,8 @@ export class AnalyticsService {
         count: item._count.status,
         percentage:
           totalApplications > 0
-            ? Math.round((item._count.status / totalApplications) * 100 * 10) / 10
+            ? Math.round((item._count.status / totalApplications) * 100 * 10) /
+              10
             : 0,
       }),
     );
@@ -77,8 +78,9 @@ export class AnalyticsService {
       applicationsByStatusRaw.find((s) => s.status === ApplicationStatus.HIRED)
         ?._count.status || 0;
     const totalRejections =
-      applicationsByStatusRaw.find((s) => s.status === ApplicationStatus.REJECTED)
-        ?._count.status || 0;
+      applicationsByStatusRaw.find(
+        (s) => s.status === ApplicationStatus.REJECTED,
+      )?._count.status || 0;
 
     // Get active jobs count
     const totalActiveJobs = await this.prisma.jobPosting.count({
@@ -124,7 +126,6 @@ export class AnalyticsService {
     };
   }
 
-
   /**
    * Get funnel analysis for recruitment pipeline
    */
@@ -132,7 +133,9 @@ export class AnalyticsService {
     jobId?: string,
     dateRange?: DateRange,
   ): Promise<FunnelData> {
-    this.logger.log(`Getting funnel analysis${jobId ? ` for job ${jobId}` : ''}`);
+    this.logger.log(
+      `Getting funnel analysis${jobId ? ` for job ${jobId}` : ''}`,
+    );
 
     // Get pipeline stages
     const pipelineWhere = jobId ? { jobId } : {};
@@ -181,7 +184,7 @@ export class AnalyticsService {
     for (const transition of transitions) {
       const key = `${transition.candidateId}-${transition.fromStageId}`;
       const entryTime = candidateStageEntry.get(key);
-      
+
       if (entryTime) {
         const timeInStage =
           (transition.movedAt.getTime() - entryTime.getTime()) /
@@ -190,7 +193,7 @@ export class AnalyticsService {
         times.push(timeInStage);
         stageTimeMap.set(transition.fromStageId, times);
       }
-      
+
       candidateStageEntry.set(
         `${transition.candidateId}-${transition.toStageId}`,
         transition.movedAt,
@@ -227,7 +230,7 @@ export class AnalyticsService {
       const fromStage = stages[i];
       const toStage = stages[i + 1];
       const dropOff = fromStage.count - toStage.count;
-      
+
       dropOffRates.push({
         fromStage: fromStage.name,
         toStage: toStage.name,
@@ -298,7 +301,8 @@ export class AnalyticsService {
       .filter((s): s is number => s !== undefined);
     const averageScore =
       scores.length > 0
-        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) /
+          10
         : 0;
 
     // Calculate time to fill
@@ -366,11 +370,12 @@ export class AnalyticsService {
     };
   }
 
-
   /**
    * Get source effectiveness metrics
    */
-  async getSourceEffectiveness(dateRange?: DateRange): Promise<SourceMetrics[]> {
+  async getSourceEffectiveness(
+    dateRange?: DateRange,
+  ): Promise<SourceMetrics[]> {
     this.logger.log('Calculating source effectiveness');
 
     // Since we don't have a dedicated source field, we'll use job location as a proxy
@@ -415,7 +420,7 @@ export class AnalyticsService {
       };
 
       existing.total++;
-      
+
       const score = app.candidate.scores[0]?.overallScore;
       if (score !== undefined) {
         existing.scores.push(score);
@@ -577,9 +582,13 @@ export class AnalyticsService {
   ): Promise<Buffer> {
     this.logger.log(`Exporting metrics in ${format} format`);
 
-    const dateRange = filters?.startDate && filters?.endDate
-      ? { startDate: new Date(filters.startDate), endDate: new Date(filters.endDate) }
-      : undefined;
+    const dateRange =
+      filters?.startDate && filters?.endDate
+        ? {
+            startDate: new Date(filters.startDate),
+            endDate: new Date(filters.endDate),
+          }
+        : undefined;
 
     const metrics = await this.getRecruitmentMetrics(dateRange, filters);
 
@@ -594,7 +603,6 @@ export class AnalyticsService {
         return this.generateCSV(metrics);
     }
   }
-
 
   // Private helper methods
 
@@ -716,7 +724,13 @@ export class AnalyticsService {
     const interviewed = await this.prisma.application.count({
       where: {
         ...whereClause,
-        status: { in: [ApplicationStatus.INTERVIEWED, ApplicationStatus.OFFERED, ApplicationStatus.HIRED] },
+        status: {
+          in: [
+            ApplicationStatus.INTERVIEWED,
+            ApplicationStatus.OFFERED,
+            ApplicationStatus.HIRED,
+          ],
+        },
       },
     });
 

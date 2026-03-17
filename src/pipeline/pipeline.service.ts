@@ -38,7 +38,9 @@ export class PipelineService {
     }
 
     if (job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only create pipelines for your own jobs');
+      throw new ForbiddenException(
+        'You can only create pipelines for your own jobs',
+      );
     }
 
     // Check if pipeline already exists
@@ -122,7 +124,9 @@ export class PipelineService {
     }
 
     if (pipeline.job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only update your own job pipelines');
+      throw new ForbiddenException(
+        'You can only update your own job pipelines',
+      );
     }
 
     // Use transaction to update stages
@@ -208,7 +212,9 @@ export class PipelineService {
 
     // Check permissions
     if (stage.pipeline.job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only move candidates in your own job pipelines');
+      throw new ForbiddenException(
+        'You can only move candidates in your own job pipelines',
+      );
     }
 
     // Get current candidate card if exists
@@ -230,7 +236,7 @@ export class PipelineService {
       // If candidate is already in pipeline, update existing card
       if (currentCard) {
         fromStageId = currentCard.stageId;
-        
+
         // Don't move if already in target stage
         if (currentCard.stageId === moveCandidateDto.stageId) {
           return currentCard;
@@ -336,7 +342,9 @@ export class PipelineService {
 
     // Check permissions
     if (stage.pipeline.job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only move candidates in your own job pipelines');
+      throw new ForbiddenException(
+        'You can only move candidates in your own job pipelines',
+      );
     }
 
     const results: any[] = [];
@@ -354,7 +362,10 @@ export class PipelineService {
         }
       } catch (error) {
         // Continue with other candidates if one fails
-        console.error(`Failed to move candidate ${candidateId}:`, error.message);
+        console.error(
+          `Failed to move candidate ${candidateId}:`,
+          error.message,
+        );
       }
     }
 
@@ -371,7 +382,9 @@ export class PipelineService {
     }
 
     if (job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only view pipelines for your own jobs');
+      throw new ForbiddenException(
+        'You can only view pipelines for your own jobs',
+      );
     }
 
     const pipeline = await this.prisma.pipeline.findUnique({
@@ -420,7 +433,11 @@ export class PipelineService {
     return pipeline;
   }
 
-  async getStageTransitionHistory(candidateId: string, userId: string, userRole: Role) {
+  async getStageTransitionHistory(
+    candidateId: string,
+    userId: string,
+    userRole: Role,
+  ) {
     const candidate = await this.prisma.candidate.findUnique({
       where: { id: candidateId },
     });
@@ -454,7 +471,7 @@ export class PipelineService {
         where: { userId },
         select: { id: true },
       });
-      const userJobIds = userJobs.map(job => job.id);
+      const userJobIds = userJobs.map((job) => job.id);
 
       // Get stages that belong to user's jobs
       const userStages = await this.prisma.stage.findMany({
@@ -465,19 +482,25 @@ export class PipelineService {
         },
         select: { id: true },
       });
-      const userStageIds = userStages.map(stage => stage.id);
+      const userStageIds = userStages.map((stage) => stage.id);
 
       // Filter transitions to only those involving user's job stages
-      return transitions.filter(transition => 
-        userStageIds.includes(transition.fromStageId) || 
-        userStageIds.includes(transition.toStageId)
+      return transitions.filter(
+        (transition) =>
+          userStageIds.includes(transition.fromStageId) ||
+          userStageIds.includes(transition.toStageId),
       );
     }
 
     return transitions;
   }
 
-  async getCandidateCard(candidateId: string, jobId: string, userId: string, userRole: Role) {
+  async getCandidateCard(
+    candidateId: string,
+    jobId: string,
+    userId: string,
+    userRole: Role,
+  ) {
     // Verify job access
     const job = await this.prisma.jobPosting.findUnique({
       where: { id: jobId },
@@ -488,7 +511,9 @@ export class PipelineService {
     }
 
     if (job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only view candidate cards for your own jobs');
+      throw new ForbiddenException(
+        'You can only view candidate cards for your own jobs',
+      );
     }
 
     // Get pipeline for the job
@@ -573,7 +598,9 @@ export class PipelineService {
 
     // Check permissions
     if (stage.pipeline.job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only update candidate positions in your own job pipelines');
+      throw new ForbiddenException(
+        'You can only update candidate positions in your own job pipelines',
+      );
     }
 
     // Get candidate card
@@ -625,7 +652,9 @@ export class PipelineService {
     }
 
     if (job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only remove candidates from your own job pipelines');
+      throw new ForbiddenException(
+        'You can only remove candidates from your own job pipelines',
+      );
     }
 
     // Get pipeline
@@ -717,12 +746,16 @@ export class PipelineService {
     }
 
     if (stage.pipeline.jobId !== jobId) {
-      throw new BadRequestException('Stage does not belong to the specified job');
+      throw new BadRequestException(
+        'Stage does not belong to the specified job',
+      );
     }
 
     // Check permissions
     if (stage.pipeline.job.userId !== userId && userRole !== Role.ADMIN) {
-      throw new ForbiddenException('You can only add candidates to your own job pipelines');
+      throw new ForbiddenException(
+        'You can only add candidates to your own job pipelines',
+      );
     }
 
     // Check if candidate is already in this pipeline
