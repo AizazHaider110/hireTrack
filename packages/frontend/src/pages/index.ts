@@ -1,5 +1,15 @@
 export { LoginPage } from './LoginPage';
 export { DashboardPage } from './DashboardPage';
 export { PipelinePage } from './PipelinePage';
+export { CandidatesPage } from './CandidatesPage';
+export { CandidateProfilePage } from './CandidateProfilePage';
 export { UnauthorizedPage } from './UnauthorizedPage';
-
+export { JobsPage } from './JobsPage';
+export { JobDetailPage } from './JobDetailPage';
+export { InterviewsPage } from './InterviewsPage';
+export { CommunicationPage } from './CommunicationPage';
+export { AnalyticsPage } from './AnalyticsPage';
+export { TeamsPage } from './TeamsPage';
+export { TeamDetailPage } from './TeamDetailPage';
+export { TalentPoolPage } from './TalentPoolPage';
+export { TalentProfilePage } from './TalentProfilePage';

@@ -3,7 +3,12 @@ import { useAppSelector } from '@/app/hooks';
 import { selectIsAuthenticated } from '@/features/auth';
 import { AppLayout } from '@/components/layout';
 import { ProtectedRoute } from '@/components/auth';
-import { LoginPage, DashboardPage, PipelinePage, UnauthorizedPage } from '@/pages';
+import {
+  LoginPage, DashboardPage, PipelinePage, CandidatesPage,
+  CandidateProfilePage, UnauthorizedPage, JobsPage, JobDetailPage,
+  InterviewsPage, CommunicationPage, AnalyticsPage,
+  TeamsPage, TeamDetailPage, TalentPoolPage, TalentProfilePage,
+} from '@/pages';
 import { Toaster } from '@/components/ui/toaster';
 
 function App() {
@@ -44,10 +49,15 @@ function App() {
           path="/candidates"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Candidates</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <CandidatesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidates/:id"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER']}>
+              <CandidateProfilePage />
             </ProtectedRoute>
           }
         />
@@ -55,10 +65,15 @@ function App() {
           path="/jobs"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Jobs</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <JobsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/jobs/:id"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER']}>
+              <JobDetailPage />
             </ProtectedRoute>
           }
         />
@@ -66,10 +81,7 @@ function App() {
           path="/interviews"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Interviews</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <InterviewsPage />
             </ProtectedRoute>
           }
         />
@@ -77,10 +89,7 @@ function App() {
           path="/communication"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Communication</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <CommunicationPage />
             </ProtectedRoute>
           }
         />
@@ -88,10 +97,7 @@ function App() {
           path="/analytics"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'HIRING_MANAGER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Analytics</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />
@@ -99,10 +105,15 @@ function App() {
           path="/teams"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'HIRING_MANAGER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Teams</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <TeamsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teams/:id"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'HIRING_MANAGER']}>
+              <TeamDetailPage />
             </ProtectedRoute>
           }
         />
@@ -110,10 +121,15 @@ function App() {
           path="/talent-pool"
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER']}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Talent Pool</h1>
-                <p className="text-muted-foreground mt-2">Coming soon...</p>
-              </div>
+              <TalentPoolPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/talent-pool/:id"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'RECRUITER', 'HIRING_MANAGER']}>
+              <TalentProfilePage />
             </ProtectedRoute>
           }
         />

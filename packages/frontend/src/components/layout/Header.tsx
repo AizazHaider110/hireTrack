@@ -1,4 +1,4 @@
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -9,10 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { useLogoutMutation, selectCurrentUser } from '@/features/auth';
 import { useAppSelector } from '@/app/hooks';
 import { useNavigate } from 'react-router-dom';
+import { NotificationCenter } from '@/features/communication';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -54,56 +54,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="flex-1" />
 
       {/* Notifications */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge
-              variant="destructive"
-              className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs"
-            >
-              3
-            </Badge>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <div className="max-h-96 overflow-y-auto">
-            <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-              <div className="flex w-full items-center justify-between">
-                <span className="font-medium">New application received</span>
-                <span className="text-xs text-muted-foreground">2m ago</span>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                John Doe applied for Senior Developer
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-              <div className="flex w-full items-center justify-between">
-                <span className="font-medium">Interview scheduled</span>
-                <span className="text-xs text-muted-foreground">1h ago</span>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                Interview with Jane Smith at 2:00 PM
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-              <div className="flex w-full items-center justify-between">
-                <span className="font-medium">Candidate moved to offer</span>
-                <span className="text-xs text-muted-foreground">3h ago</span>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                Mike Johnson moved to Offer stage
-              </span>
-            </DropdownMenuItem>
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="justify-center text-center">
-            View all notifications
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <NotificationCenter />
 
       {/* User menu */}
       <DropdownMenu>
